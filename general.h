@@ -33,90 +33,51 @@
 #include <vector>
 
 #if defined(_WIN32)
-    #include <Windows.h>
+typedef std::wstring string_t;
+typedef std::wofstream ofstream_t;
+typedef std::wifstream ifstream_t;
+typedef wchar_t char_t;
+const int SIZE_WID = 24;
 #else
-    #include <dirent.h>
+typedef std::string string_t;
+typedef std::ofstream ofstream_t;
+typedef  std::ifstream ifstream_t;
+typedef char char_t;
+const int SIZE_WID = 32;
 #endif
+const QString INDEX_FILE = "index.xml";
+const QString DIR_EXT = "DIR";
 
+const QString HEADER_TAG = "<?xml version = \"1.0\"?>";
+const QString REM_TAG = "<!-- Filesystem index -->";
+const QString FS_OPEN_TAG = "<filesystem>";
+const QString FS_CLOSE_TAG = "</filesystem>";
 
-#if defined(_WIN32)
-    typedef std::wstring string_t;
-    typedef std::wofstream ofstream_t;
-    typedef std::wifstream ifstream_t;
-    typedef wchar_t char_t;
+const QString OBJECT_OPEN_TAG = "<object path =\"";
+const QString OBJECT_CLOSE_TAG_ATTR = "\">";
+const QString OBJECT_CLOSE_TAG = "</object>";
+const int OBJECT_OPEN_TAG_SIZE = 15;
 
-    const int SIZE_WID = 24;
-    const string_t INDEX_FILE = L"index.xml";
-    const string_t DIR_EXT = L"DIR";
+const QString NAME_OPEN_TAG = "<name>";
+const QString NAME_CLOSE_TAG = "</name>";
+const int NAME_OPEN_TAG_SIZE = 6;
 
-    const string_t HEADER_TAG = L"<?xml version = \"1.0\"?>";
-    const string_t REM_TAG = L"<!-- Filesystem index -->";
-    const string_t FS_OPEN_TAG = L"<filesystem>";
-    const string_t FS_CLOSE_TAG = L"</filesystem>";
+const QString EXT_OPEN_TAG = "<extension>";
+const QString EXT_CLOSE_TAG = "</extension>";
+const int EXT_OPEN_TAG_SIZE = 11;
 
-    const string_t OBJECT_OPEN_TAG = L"<object path =\"";
-    const string_t OBJECT_CLOSE_TAG_ATTR = L"\">";
-    const string_t OBJECT_CLOSE_TAG = L"</object>";
-    const size_t OBJECT_OPEN_TAG_SIZE = 15;
+const QString SIZE_OPEN_TAG = "<size>";
+const QString SIZE_CLOSE_TAG = "</size>";
+const int SIZE_OPEN_TAG_SIZE = 6;
 
-    const string_t NAME_OPEN_TAG = L"<name>";
-    const string_t NAME_CLOSE_TAG = L"</name>";
-    const size_t NAME_OPEN_TAG_SIZE = 6;
-
-    const string_t EXT_OPEN_TAG = L"<extension>";
-    const string_t EXT_CLOSE_TAG = L"</extension>";
-    const size_t EXT_OPEN_TAG_SIZE = 11;
-
-    const string_t SIZE_OPEN_TAG = L"<size>";
-    const string_t SIZE_CLOSE_TAG = L"</size>";
-    const size_t SIZE_OPEN_TAG_SIZE = 6;
-
-    const string_t DATE_OPEN_TAG = L"<date>";
-    const string_t DATE_CLOSE_TAG = L"</date>";
-    const size_t DATE_OPEN_TAG_SIZE = 6;
-#else
-    typedef std::string string_t;
-    typedef std::ofstream ofstream_t;
-    typedef  std::ifstream ifstream_t;
-    typedef char char_t;
-
-    const int SIZE_WID = 32;
-    const QString INDEX_FILE = "index.xml";
-    const QString DIR_EXT = "DIR";
-
-    const QString HEADER_TAG = "<?xml version = \"1.0\"?>";
-    const QString REM_TAG = "<!-- Filesystem index -->";
-    const QString FS_OPEN_TAG = "<filesystem>";
-    const QString FS_CLOSE_TAG = "</filesystem>";
-
-    const QString OBJECT_OPEN_TAG = "<object path =\"";
-    const QString OBJECT_CLOSE_TAG_ATTR = "\">";
-    const QString OBJECT_CLOSE_TAG = "</object>";
-    const size_t OBJECT_OPEN_TAG_SIZE = 15;
-
-    const QString NAME_OPEN_TAG = "<name>";
-    const QString NAME_CLOSE_TAG = "</name>";
-    const size_t NAME_OPEN_TAG_SIZE = 6;
-
-    const QString EXT_OPEN_TAG = "<extension>";
-    const QString EXT_CLOSE_TAG = "</extension>";
-    const size_t EXT_OPEN_TAG_SIZE = 11;
-
-    const QString SIZE_OPEN_TAG = "<size>";
-    const QString SIZE_CLOSE_TAG = "</size>";
-    const size_t SIZE_OPEN_TAG_SIZE = 6;
-
-    const QString DATE_OPEN_TAG = "<date>";
-    const QString DATE_CLOSE_TAG = "</date>";
-    const size_t DATE_OPEN_TAG_SIZE = 6;
-
-
-#endif
-
+const QString DATE_OPEN_TAG = "<date>";
+const QString DATE_CLOSE_TAG = "</date>";
+const int DATE_OPEN_TAG_SIZE = 6;
 const QString NAME_STR = "Name";
 const QString EXTENSION_STR = "Extension";
 const QString SIZE_STR = "Size";
 const QString DATE_STR = "Date";
+
 #define S_TYPE QStringList() << NAME_STR << EXTENSION_STR << SIZE_STR << DATE_STR
 #define EXTANSION_DEF node.isFile() ? node.suffix ().isEmpty ()? "Unknown" :node.suffix () : "DIR"
 #define SIZE_DEF node.isFile() ? node.size() : 0

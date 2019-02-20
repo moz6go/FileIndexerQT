@@ -11,7 +11,6 @@ class Indexer : public StateChecker {
     SearchType type_;
     QString key_;
     QString xml_doc_;
-    std::vector<string_t> drives_;
     QFile indx_;
     QTextStream fout_;
 
@@ -19,9 +18,6 @@ class Indexer : public StateChecker {
     void RecursiveSearchFiles(const QDir& dir);
     void WriteIndexNode(FileInfo& node);
     bool isObjExist(FileInfo& f_info);
-#if defined(_WIN32)
-    void GetWinDrives();
-#endif
 public:
     Indexer();
     ~Indexer();
