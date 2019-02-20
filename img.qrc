@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/buttons">
+        <file>resources/search.png</file>
+        <file>resources/start.png</file>
+        <file>resources/stop.png</file>
+        <file>resources/pause.png</file>
+        <file>resources/main_icon.png</file>
+    </qresource>
+</RCC>
