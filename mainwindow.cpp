@@ -79,6 +79,12 @@ void MainWindow::BuildToolbar() {
 }
 
 void MainWindow::DefaultTableWgtInit() {
+//    for (int i = 0; i < lst_item.size(); ++i) {
+//        if(lst_item.at(i)){
+//            delete lst_item[i];
+//            lst_item[i] = nullptr;
+//        }
+//    }
     table_wgt_->clear ();
     table_wgt_->setRowCount (0);
     table_wgt_->setColumnCount(5);
@@ -208,6 +214,7 @@ void MainWindow::onActionPause() {
 }
 
 void MainWindow::onActionSearch() {
+    //lst_item.clear();
     QString key = type_ == BY_DATE ? s_date_->text (): s_line_->text ();
     SwitchButtons(SEARCH);
     DefaultTableWgtInit();
@@ -234,9 +241,7 @@ void MainWindow::ActionsAfterSearch (unsigned count){
 }
 
 void MainWindow::ShowMessage(QString msg){
-    if (msg == INDEX_IS_EMPTY || msg == INDEX_SUCCESS) {
-        SwitchButtons(DEFAULT);
-    }
+    if (msg == INDEX_SUCCESS || msg.contains(INDEX_SUCCESS)) SwitchButtons(DEFAULT);
     ui->s_bar->showMessage (msg);
 }
 
@@ -246,12 +251,18 @@ void MainWindow::ShowCurrDir(QString path, unsigned count) {
 
 void MainWindow::DisplayFileInfo(FileInfo info) {
     table_wgt_->insertRow(table_wgt_->rowCount());
-    table_wgt_->setItem(table_wgt_->rowCount() - 1, 0, new QTableWidgetItem(info.name));
-    table_wgt_->setItem(table_wgt_->rowCount() - 1, 1, new QTableWidgetItem(info.extension));
-    table_wgt_->setItem(table_wgt_->rowCount() - 1, 2, new QTableWidgetItem(info.size));
-    table_wgt_->setItem(table_wgt_->rowCount() - 1, 3, new QTableWidgetItem(info.date));
-    table_wgt_->setItem(table_wgt_->rowCount() - 1, 4, new QTableWidgetItem(info.path));
-    if (!(table_wgt_->rowCount() % 1000)) {
+
+    for(int i = 0; i < 5; ++i) {
+        // memory leak, need to fix
+        QTableWidgetItem* item = new QTableWidgetItem(i == 0 ? info.name :
+                                                      i == 1 ? info.extension :
+                                                      i == 2 ? info.size :
+                                                      i == 3 ? info.date :
+                                                               info.path);
+        table_wgt_->setItem(table_wgt_->rowCount() - 1, i, item);
+//        lst_item.push_back(item);
+    }
+    if (!(table_wgt_->rowCount() % 256)) {
         ui->s_bar->showMessage("Searching... " + QString::number(table_wgt_->rowCount()) + " objects already found...");
     }
 }

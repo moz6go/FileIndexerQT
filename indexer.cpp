@@ -4,39 +4,35 @@ Indexer::Indexer() : count_(0),
     c_dir_(1),
     search_res_count_(0),
     type_(ALL),
-    indx_(INDEX_FILE),
-    fout_(&indx_)  {}
+    indx_(INDEX_FILE) {}
 
 Indexer::~Indexer() {}
 
 void Indexer::WriteIndex(){
+    QTime t = QTime::currentTime ();
     type_ = ALL;
-    if(indx_.open(QIODevice::WriteOnly)) {
-        qDebug() << "write open";
-        fout_ << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
-        foreach(QFileInfo drive, QDir::drives()) {
-            RecursiveSearchFiles (drive.dir());
-        }
-        fout_ << FS_CLOSE_TAG;
-        indx_.close ();
-        qDebug() << "write close";
+    WriteIndexHead();
+    foreach(QFileInfo drive, QDir::drives()) {
+        RecursiveSearchFiles (drive.dir());
+        if(CheckState() == STOP) return;
     }
+//    RecursiveSearchFiles (QDir("/home/myroslav/Документи/Repos/ShoesStore"));
+    WriteIndexTail();
+    qDebug() << t.elapsed();
 }
 
 void Indexer::ReadIndex() {
     if (indx_.open(QIODevice::ReadOnly)) {
-        qDebug() << "read open";
         QTextStream fin(&indx_);
         xml_doc_.clear();
         xml_doc_ = fin.readAll ();
         if(xml_doc_.size()) {
-            emit Message(INDEX_SUCCESS);
+            emit Message(INDEX_SUCCESS + ", " + QString::number(xml_doc_.count(OBJECT_CLOSE_TAG)) + " objects in index");
         }
         else {
             emit Message(INDEX_IS_EMPTY);
         }
         indx_.close();
-        qDebug() << "read close";
     }
     else {
         emit Message(INDEX_IS_EMPTY);
@@ -82,7 +78,6 @@ void Indexer::Search(SearchType type, QString key)  {
             if ((xml_doc_.indexOf (open_tag, pos) + open_tag_size) > pos) {
                 if (xml_doc_.mid(xml_doc_.indexOf(open_tag, pos) + open_tag_size,
                                   xml_doc_.indexOf(close_tag, pos) - (xml_doc_.indexOf(open_tag, pos) + open_tag_size)) == key) {
-
                     //store FileInfo and send signal to view
                     f_info.path = xml_doc_.mid (xml_doc_.indexOf(OBJECT_OPEN_TAG, pos) + OBJECT_OPEN_TAG_SIZE,
                                                  xml_doc_.indexOf(OBJECT_CLOSE_TAG_ATTR, pos) - (xml_doc_.indexOf(OBJECT_OPEN_TAG, pos) + OBJECT_OPEN_TAG_SIZE));
@@ -110,6 +105,7 @@ void Indexer::Search(SearchType type, QString key)  {
             else {
                 pos = xml_doc_.size();
             }
+
             if(state_ == STOP) {
                 emit MessageSearchCount(search_res_count_);
                 return;
@@ -119,7 +115,10 @@ void Indexer::Search(SearchType type, QString key)  {
     }
     if(!search_res_count_) {
         emit Message(SEARCH_IN_FS);
-        RecursiveSearchFiles (QDir::rootPath ());
+        foreach(QFileInfo drive, QDir::drives()) {
+            RecursiveSearchFiles (drive.dir());
+            if(CheckState() == STOP) return;
+        }
     }
     emit MessageSearchCount(search_res_count_);
 }
@@ -147,7 +146,7 @@ void Indexer::SetCount(unsigned c_dir, unsigned c_obj) {
 
 // private methods-------------------------------------------------------------------------------------------
 void Indexer::RecursiveSearchFiles(const QDir& dir) {
-    if(!(count_ % 100)) {
+    if(!(count_ % 128)) {
         emit CurrDir(dir.absolutePath (), count_);
     }
 
@@ -157,62 +156,89 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
         RecursiveSearchFiles(QDir(dir.absoluteFilePath(subdir.absoluteFilePath ())));
     }
 
-    QFileInfoList listFiles = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System);
-    foreach (QFileInfo file_info, listFiles) {
-        FileInfo curr_file_info;
-        curr_file_info.name = file_info.fileName ();
-        curr_file_info.extension = file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR";
-        curr_file_info.size = QString::number (file_info.isFile() ? file_info.size() : 0);
-        curr_file_info.date = file_info.lastModified ().toString ("dd.MM.yyyy");
-        curr_file_info.path = file_info.absoluteFilePath ();
-        switch(type_) {
-        case ALL:
-            WriteIndexNode(curr_file_info);
-            ++count_;
-            break;
-        case BY_NAME:
-            if (key_ == curr_file_info.name){
-                emit SendInfoToView(curr_file_info);
-                ++search_res_count_;
-            }
-            break;
-        case BY_EXTENSION:
-            if (key_ == curr_file_info.extension){
-                emit SendInfoToView(curr_file_info);
-                ++search_res_count_;
-            }
-            break;
+    if(CheckState() == STOP) return;
+    CheckPause();
 
-        case BY_SIZE:
-            if (key_ == curr_file_info.size){
-                emit SendInfoToView(curr_file_info);
-                ++search_res_count_;
+    if (type_ == ALL) {
+        WriteIndexNode(dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System));
+    }
+    else {
+        foreach (QFileInfo file_info, dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System)) {
+            FileInfo curr_file_info;
+            curr_file_info.name = file_info.fileName ();
+            curr_file_info.extension = file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR";
+            curr_file_info.size = QString::number (file_info.isFile() ? file_info.size() : 0);
+            curr_file_info.date = file_info.lastModified ().toString ("dd.MM.yyyy");
+            curr_file_info.path = file_info.absoluteFilePath ();
+
+            switch(type_) {
+            case ALL:
+            case BY_NAME:
+                if (key_ == curr_file_info.name){
+                    emit SendInfoToView(curr_file_info);
+                    ++search_res_count_;
+                }
+                break;
+            case BY_EXTENSION:
+                if (key_ == curr_file_info.extension){
+                    emit SendInfoToView(curr_file_info);
+                    ++search_res_count_;
+                }
+                break;
+            case BY_SIZE:
+                if (key_ == curr_file_info.size){
+                    emit SendInfoToView(curr_file_info);
+                    ++search_res_count_;
+                }
+                break;
+            case BY_DATE:
+                if (key_ == curr_file_info.date) {
+                    emit SendInfoToView(curr_file_info);
+                    ++search_res_count_;
+                }
+                break;
             }
-            break;
-        case BY_DATE:
-            if (key_ == curr_file_info.date) {
-                emit SendInfoToView(curr_file_info);
-                ++search_res_count_;
-            }
-            break;
         }
-        if(CheckState() == STOP) return;
-        CheckPause();
     }
 }
 
-void Indexer::WriteIndexNode(FileInfo& node) {
-    if (indx_.isOpen ()) {
-        fout_ << OBJECT_OPEN_TAG << node.path << OBJECT_CLOSE_TAG_ATTR <<
-                NAME_OPEN_TAG << node.name << NAME_CLOSE_TAG <<
-                EXT_OPEN_TAG << node.extension << EXT_CLOSE_TAG <<
-                SIZE_OPEN_TAG << node.size << SIZE_CLOSE_TAG <<
-                DATE_OPEN_TAG << node.date << DATE_CLOSE_TAG <<
-                OBJECT_CLOSE_TAG;
+
+void Indexer::WriteIndexHead() {
+    if(indx_.open(QIODevice::WriteOnly)){
+        QTextStream fout(&indx_);
+        fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
+        indx_.close ();
+    }
+}
+void Indexer::WriteIndexTail() {
+    if(indx_.open(QIODevice::WriteOnly | QIODevice::Append)){
+        QTextStream fout(&indx_);
+        fout << FS_CLOSE_TAG;
+        indx_.close ();
+    }
+}
+void Indexer::WriteIndexNode(QFileInfoList file_list) {
+    if(indx_.open(QIODevice::WriteOnly | QIODevice::Append)){
+        QTextStream fout(&indx_);
+        for(const auto& file_info : file_list) {
+            fout << OBJECT_OPEN_TAG << file_info.absoluteFilePath () << OBJECT_CLOSE_TAG_ATTR <<
+                    NAME_OPEN_TAG << file_info.fileName () << NAME_CLOSE_TAG <<
+                    EXT_OPEN_TAG << (file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR") << EXT_CLOSE_TAG <<
+                    SIZE_OPEN_TAG << QString::number (file_info.isFile() ? file_info.size() : 0) << SIZE_CLOSE_TAG <<
+                    DATE_OPEN_TAG << file_info.lastModified ().toString ("dd.MM.yyyy") << DATE_CLOSE_TAG <<
+                    OBJECT_CLOSE_TAG;
+            ++count_;
+        }
+        indx_.close ();
     }
 }
 
 
 bool Indexer::isObjExist(FileInfo& f_info) {
-    return QDir(f_info.path).exists ();
+    if(f_info.extension == DIR_EXT){
+        return QDir(f_info.path).exists ();
+    }
+    else {
+        return QFileInfo(f_info.path).exists ();
+    }
 }

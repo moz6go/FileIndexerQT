@@ -16,7 +16,9 @@ class Indexer : public StateChecker {
 
 
     void RecursiveSearchFiles(const QDir& dir);
-    void WriteIndexNode(FileInfo& node);
+    void WriteIndexHead();
+    void WriteIndexTail();
+    void WriteIndexNode(QFileInfoList file_list);
     bool isObjExist(FileInfo& f_info);
 public:
     Indexer();

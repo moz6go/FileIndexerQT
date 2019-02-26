@@ -11,6 +11,7 @@ class MainWindow : public QMainWindow {
     Indexer* indx_ptr_;
     SearchType type_;
     Ui::MainWindow* ui;
+    QVector<QTableWidgetItem*> lst_item;
 
     QToolBar* ptb_;
     QAction* start_action_;
