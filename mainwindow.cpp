@@ -14,6 +14,7 @@ MainWindow::MainWindow(Indexer* indx_ref, QWidget *parent) : QMainWindow(parent)
     s_line_ = new QLineEdit(this);
     s_date_ = new QDateEdit(this);
     s_combo_ = new QComboBox(this);
+    s_combo_comp_ = new QComboBox(this);
     f_model_ = new QFileSystemModel(this);
     tree_view_ = new QTreeView(this);
     table_wgt_ = new QTableWidget(this);
@@ -57,6 +58,8 @@ void MainWindow::BuildToolbar() {
 
     s_combo_->setMaximumHeight (SIZE_WID);
     s_combo_->addItems (S_TYPE);
+    s_combo_comp_->setMaximumHeight (SIZE_WID);
+    s_combo_comp_->addItems (COMP_SET_1);
 
     start_action_ = ptb_->addAction(QPixmap(":/buttons/resources/start.png"), "Start indexing", this, SLOT(onActionStart()));
     ptb_->addSeparator ();
@@ -65,6 +68,8 @@ void MainWindow::BuildToolbar() {
     ptb_->addSeparator ();
     ptb_->addWidget (new QLabel(" Search by ", this));
     ptb_->addWidget (s_combo_);
+    ptb_->addSeparator ();
+    ptb_->addWidget (s_combo_comp_);
     ptb_->addSeparator ();
     stacked_wgt_action_ = ptb_->addWidget (stacked_wgt_);
     stacked_wgt_->setCurrentWidget (s_line_);
@@ -79,12 +84,6 @@ void MainWindow::BuildToolbar() {
 }
 
 void MainWindow::DefaultTableWgtInit() {
-//    for (int i = 0; i < lst_item.size(); ++i) {
-//        if(lst_item.at(i)){
-//            delete lst_item[i];
-//            lst_item[i] = nullptr;
-//        }
-//    }
     table_wgt_->clear ();
     table_wgt_->setRowCount (0);
     table_wgt_->setColumnCount(5);
@@ -226,6 +225,9 @@ void MainWindow::onActionSearch() {
     QObject::connect (search_thread, &QThread::started, contr, [=] { contr->onSearchButtonClick(type_, key); }, Qt::UniqueConnection);
     QObject::connect (indx_ptr_, &Indexer::MessageSearchCount, this, &MainWindow::ActionsAfterSearch, Qt::UniqueConnection);
     QObject::connect (indx_ptr_, &Indexer::SendInfoToView, this, &MainWindow::DisplayFileInfo, Qt::UniqueConnection);
+    QObject::connect (indx_ptr_, &Indexer::CurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
+    QObject::connect (indx_ptr_, &Indexer::CallMsgBox, this, &MainWindow::ShowMsgBox, Qt::UniqueConnection);
+
     search_thread->start ();
 }
 
@@ -235,32 +237,35 @@ void MainWindow::ActionsAfterIndexing() {
                             ",    Count of objects: " + QString::number (indx_ptr_->GetObjectCount ()));
 }
 
-void MainWindow::ActionsAfterSearch (unsigned count){
+void MainWindow::ActionsAfterSearch (unsigned count) {
     SwitchButtons(DEFAULT);
-    ui->s_bar->showMessage ("Find " + QString::number(count) + " objects");
+    ui->s_bar->showMessage ("Found " + QString::number(count) + " objects");
 }
 
 void MainWindow::ShowMessage(QString msg){
-    if (msg == INDEX_SUCCESS || msg.contains(INDEX_SUCCESS)) SwitchButtons(DEFAULT);
+    if (msg == INDEX_IS_EMPTY || msg.contains(INDEX_SUCCESS)) SwitchButtons(DEFAULT);
     ui->s_bar->showMessage (msg);
 }
 
 void MainWindow::ShowCurrDir(QString path, unsigned count) {
-    ui->s_bar->showMessage (INDEXING + " | " + QString::number (count) + " objects indexed | Current dir: " + path);
+    if (indx_ptr_->CheckState () == START) {
+        ui->s_bar->showMessage (INDEXING + " | " + QString::number (count) + " objects indexed | Current dir: " + path);
+    }
+    else {
+        ui->s_bar->showMessage (SEARCH_IN_FS + " | Current dir: " + path);
+    }
 }
 
 void MainWindow::DisplayFileInfo(FileInfo info) {
     table_wgt_->insertRow(table_wgt_->rowCount());
 
     for(int i = 0; i < 5; ++i) {
-        // memory leak, need to fix
         QTableWidgetItem* item = new QTableWidgetItem(i == 0 ? info.name :
                                                       i == 1 ? info.extension :
                                                       i == 2 ? info.size :
                                                       i == 3 ? info.date :
                                                                info.path);
         table_wgt_->setItem(table_wgt_->rowCount() - 1, i, item);
-//        lst_item.push_back(item);
     }
     if (!(table_wgt_->rowCount() % 256)) {
         ui->s_bar->showMessage("Searching... " + QString::number(table_wgt_->rowCount()) + " objects already found...");
@@ -271,26 +276,34 @@ void MainWindow::setSearchType(QString type) {
     if(type == NAME_STR) {
         type_ = BY_NAME;
         stacked_wgt_->setCurrentWidget (s_line_);
+        s_combo_comp_->clear ();
+        s_combo_comp_->addItems (COMP_SET_1);
         CheckSearchLine (s_line_->text ());
     }
     if(type == EXTENSION_STR){
         type_ = BY_EXTENSION;
         stacked_wgt_->setCurrentWidget (s_line_);
+        s_combo_comp_->clear ();
+        s_combo_comp_->addItems (COMP_SET_1);
         CheckSearchLine (s_line_->text ());
     }
     if(type == SIZE_STR){
         type_ = BY_SIZE;
         stacked_wgt_->setCurrentWidget (s_line_);
+        s_combo_comp_->clear ();
+        s_combo_comp_->addItems (COMP_SET_2);
         CheckSearchLine (s_line_->text ());
     }
     if(type == DATE_STR){
         type_ = BY_DATE;
         stacked_wgt_->setCurrentWidget (s_date_);
+        s_combo_comp_->clear ();
+        s_combo_comp_->addItems (COMP_SET_2);
         search_action_->setEnabled (true);
     }
 }
 
-void MainWindow::CheckSearchLine(QString text){
+void MainWindow::CheckSearchLine(QString text) {
     if(text == "") {
         search_action_->setDisabled (true);
     }
@@ -306,4 +319,22 @@ void MainWindow::ShowDir(int row, int col) {
 void MainWindow::ShowAlloc(int row, int col) {
     QModelIndex indx = f_model_->index (table_wgt_->item(row, 4)->text ());
     tree_view_->setCurrentIndex (indx);
+}
+
+void MainWindow::ShowMsgBox (unsigned count) {
+    SwitchButtons(SEARCH);
+    QMessageBox* msgbox = new QMessageBox(QMessageBox::Question,
+                                          "Search in filesystem...",
+                                          "Found " + QString::number (count) + " object(s).\nDo you want to continue search in filesystem?",
+                                          QMessageBox::No | QMessageBox::Yes,
+                                          this);
+    if(msgbox->exec () == QMessageBox::Yes) {
+        indx_ptr_->SetSerchInFs (true);
+        DefaultTableWgtInit ();
+    }
+    else {
+        indx_ptr_->SetSerchInFs (false);
+    }
+    indx_ptr_->SetState (SEARCH);
+    indx_ptr_->Resume();
 }

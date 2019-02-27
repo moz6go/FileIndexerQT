@@ -25,6 +25,7 @@ class MainWindow : public QMainWindow {
     QLineEdit* s_line_;
     QDateEdit* s_date_;
     QComboBox* s_combo_;
+    QComboBox* s_combo_comp_;
     QFileSystemModel* f_model_;
     QTableWidget* table_wgt_;
     QHeaderView* header_;
@@ -55,6 +56,7 @@ private slots:
     void CheckSearchLine(QString text);
     void ShowDir(int row, int col);
     void ShowAlloc(int row, int col);
+    void ShowMsgBox(unsigned count);
 };
 
 #endif // MAINWINDOW_H

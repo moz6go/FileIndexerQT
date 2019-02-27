@@ -3,22 +3,21 @@
 Indexer::Indexer() : count_(0),
     c_dir_(1),
     search_res_count_(0),
+    search_in_fs_(false),
     type_(ALL),
     indx_(INDEX_FILE) {}
 
 Indexer::~Indexer() {}
 
 void Indexer::WriteIndex(){
-    QTime t = QTime::currentTime ();
     type_ = ALL;
     WriteIndexHead();
     foreach(QFileInfo drive, QDir::drives()) {
         RecursiveSearchFiles (drive.dir());
-        if(CheckState() == STOP) return;
+        if(CheckState() == STOP) break;
     }
-//    RecursiveSearchFiles (QDir("/home/myroslav/Документи/Repos/ShoesStore"));
+//    RecursiveSearchFiles (QDir("/home/myroslav/Документи"));
     WriteIndexTail();
-    qDebug() << t.elapsed();
 }
 
 void Indexer::ReadIndex() {
@@ -27,7 +26,7 @@ void Indexer::ReadIndex() {
         xml_doc_.clear();
         xml_doc_ = fin.readAll ();
         if(xml_doc_.size()) {
-            emit Message(INDEX_SUCCESS + ", " + QString::number(xml_doc_.count(OBJECT_CLOSE_TAG)) + " objects in index");
+            emit Message(INDEX_SUCCESS + " | " + QString::number(xml_doc_.count(OBJECT_CLOSE_TAG)) + " objects in index");
         }
         else {
             emit Message(INDEX_IS_EMPTY);
@@ -106,49 +105,56 @@ void Indexer::Search(SearchType type, QString key)  {
                 pos = xml_doc_.size();
             }
 
-            if(state_ == STOP) {
+            if(CheckState() == STOP) {
                 emit MessageSearchCount(search_res_count_);
                 return;
             }
         } while (pos < xml_doc_.size());
-
+        emit MessageSearchCount(search_res_count_);
+        emit CallMsgBox (search_res_count_);
+        SetState (PAUSE);
+        CheckPause ();
     }
-    if(!search_res_count_) {
+    if(!search_res_count_ || search_in_fs_) {
+        search_res_count_ = 0;
         emit Message(SEARCH_IN_FS);
         foreach(QFileInfo drive, QDir::drives()) {
             RecursiveSearchFiles (drive.dir());
-            if(CheckState() == STOP) return;
+            if(CheckState() == STOP) break;
         }
     }
     emit MessageSearchCount(search_res_count_);
 }
 
-
+bool Indexer::Compare(QString& key, QString& comp, QString text){
+}
 
 unsigned Indexer::GetObjectCount() const {
     return count_;
 }
 
-
-
 unsigned Indexer::GetDirCount() const {
     return c_dir_;
 }
-
-
 
 void Indexer::SetCount(unsigned c_dir, unsigned c_obj) {
     c_dir_ = c_dir;
     count_ = c_obj;
 }
 
-
+void Indexer::SetSerchInFs(bool search){
+    search_in_fs_ = search;
+}
 
 // private methods-------------------------------------------------------------------------------------------
 void Indexer::RecursiveSearchFiles(const QDir& dir) {
-    if(!(count_ % 128)) {
+    if(CheckState() == STOP) return;
+    CheckPause();
+
+    if(!(c_dir_ % 128)) {
         emit CurrDir(dir.absolutePath (), count_);
     }
+
 
     QFileInfoList listDir = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
     foreach (QFileInfo subdir, listDir) {
@@ -156,8 +162,6 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
         RecursiveSearchFiles(QDir(dir.absoluteFilePath(subdir.absoluteFilePath ())));
     }
 
-    if(CheckState() == STOP) return;
-    CheckPause();
 
     if (type_ == ALL) {
         WriteIndexNode(dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System));
@@ -210,6 +214,7 @@ void Indexer::WriteIndexHead() {
         indx_.close ();
     }
 }
+
 void Indexer::WriteIndexTail() {
     if(indx_.open(QIODevice::WriteOnly | QIODevice::Append)){
         QTextStream fout(&indx_);
@@ -217,6 +222,7 @@ void Indexer::WriteIndexTail() {
         indx_.close ();
     }
 }
+
 void Indexer::WriteIndexNode(QFileInfoList file_list) {
     if(indx_.open(QIODevice::WriteOnly | QIODevice::Append)){
         QTextStream fout(&indx_);
@@ -235,10 +241,5 @@ void Indexer::WriteIndexNode(QFileInfoList file_list) {
 
 
 bool Indexer::isObjExist(FileInfo& f_info) {
-    if(f_info.extension == DIR_EXT){
-        return QDir(f_info.path).exists ();
-    }
-    else {
-        return QFileInfo(f_info.path).exists ();
-    }
+    return f_info.extension == DIR_EXT ? QDir(f_info.path).exists () : QFileInfo(f_info.path).exists ();
 }

@@ -22,30 +22,18 @@
 #include <QHBoxLayout>
 #include <QStackedWidget>
 #include <QDesktopServices>
+#include <QMessageBox>
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <locale>
-#include <string>
-#include <cstring>
-#include <fstream>
-#include <iterator>
-#include <vector>
 
 #if defined(_WIN32)
-typedef std::wstring string_t;
-typedef std::wofstream ofstream_t;
-typedef std::wifstream ifstream_t;
-typedef wchar_t char_t;
 const int SIZE_WID = 24;
+const QString INDEX_FILE = "C:\\index.xml";
 #else
-typedef std::string string_t;
-typedef std::ofstream ofstream_t;
-typedef  std::ifstream ifstream_t;
-typedef char char_t;
 const int SIZE_WID = 32;
+const QString INDEX_FILE = "/tmp/.FS_index.xml";
 #endif
-const QString INDEX_FILE = "index.xml";
+
 const QString DIR_EXT = "DIR";
 
 const QString HEADER_TAG = "<?xml version = \"1.0\"?>";
@@ -73,12 +61,15 @@ const int SIZE_OPEN_TAG_SIZE = 6;
 const QString DATE_OPEN_TAG = "<date>";
 const QString DATE_CLOSE_TAG = "</date>";
 const int DATE_OPEN_TAG_SIZE = 6;
+
 const QString NAME_STR = "Name";
 const QString EXTENSION_STR = "Extension";
 const QString SIZE_STR = "Size";
 const QString DATE_STR = "Date";
 
 #define S_TYPE QStringList() << NAME_STR << EXTENSION_STR << SIZE_STR << DATE_STR
+#define COMP_SET_1 QStringList() << "=" << "contains"
+#define COMP_SET_2 QStringList() << "=" << ">" << "<" << ">=" << "<="
 #define EXTANSION_DEF node.isFile() ? node.suffix ().isEmpty ()? "Unknown" :node.suffix () : "DIR"
 #define SIZE_DEF node.isFile() ? node.size() : 0
 
