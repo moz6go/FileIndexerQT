@@ -6,7 +6,7 @@ MainWindow::MainWindow(Indexer* indx_ref, QWidget *parent) : QMainWindow(parent)
 
     indx_ptr_ = indx_ref;
     type_ = BY_NAME;
-
+    comp_type_ = EQUAL;
     QWidget* wgt = new QWidget(this);
     setCentralWidget (wgt);
 
@@ -80,6 +80,7 @@ void MainWindow::BuildToolbar() {
     addToolBar(Qt::TopToolBarArea, ptb_);
 
     QObject::connect (s_combo_, &QComboBox::currentTextChanged, this, &MainWindow::setSearchType, Qt::UniqueConnection);
+    QObject::connect (s_combo_comp_, &QComboBox::currentTextChanged, this, &MainWindow::setCompareType, Qt::UniqueConnection);
     QObject::connect (s_line_, &QLineEdit::textChanged, this, &MainWindow::CheckSearchLine);
 }
 
@@ -126,6 +127,7 @@ void MainWindow::SwitchButtons(Condition state) {
         pause_action_->setDisabled (true);
         stacked_wgt_->setEnabled (true);
         s_combo_->setEnabled (true);
+        s_combo_comp_->setEnabled (true);
         CheckSearchLine (s_line_->text ());
         break;
     case START:
@@ -135,6 +137,7 @@ void MainWindow::SwitchButtons(Condition state) {
         search_action_->setDisabled (true);
         stacked_wgt_->setDisabled (true);
         s_combo_->setDisabled (true);
+        s_combo_comp_->setDisabled (true);
         break;
     case STOP:
         start_action_->setEnabled (true);
@@ -155,6 +158,7 @@ void MainWindow::SwitchButtons(Condition state) {
         search_action_->setDisabled (true);
         stacked_wgt_->setDisabled (true);
         s_combo_->setDisabled (true);
+        s_combo_comp_->setDisabled (true);
         break;
     case DISABLED:
         start_action_->setDisabled (true);
@@ -163,6 +167,7 @@ void MainWindow::SwitchButtons(Condition state) {
         search_action_->setDisabled (true);
         stacked_wgt_->setDisabled (true);
         s_combo_->setDisabled (true);
+        s_combo_comp_->setDisabled (true);
     }
 }
 
@@ -222,7 +227,7 @@ void MainWindow::onActionSearch() {
     Controller* contr = new Controller(indx_ptr_);
     contr->moveToThread (search_thread);
 
-    QObject::connect (search_thread, &QThread::started, contr, [=] { contr->onSearchButtonClick(type_, key); }, Qt::UniqueConnection);
+    QObject::connect (search_thread, &QThread::started, contr, [=] { contr->onSearchButtonClick(type_, comp_type_, key); }, Qt::UniqueConnection);
     QObject::connect (indx_ptr_, &Indexer::MessageSearchCount, this, &MainWindow::ActionsAfterSearch, Qt::UniqueConnection);
     QObject::connect (indx_ptr_, &Indexer::SendInfoToView, this, &MainWindow::DisplayFileInfo, Qt::UniqueConnection);
     QObject::connect (indx_ptr_, &Indexer::CurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
@@ -301,6 +306,16 @@ void MainWindow::setSearchType(QString type) {
         s_combo_comp_->addItems (COMP_SET_2);
         search_action_->setEnabled (true);
     }
+}
+
+void MainWindow::setCompareType(QString type) {
+    if(type == EQUAL_STR) comp_type_ = EQUAL;
+    if(type == NOT_EQUAL_STR) comp_type_ = NOT_EQUAL;
+    if(type == CONTAINS_STR) comp_type_ = CONTAINS;
+    if(type == LESS_STR) comp_type_ = LESS;
+    if(type == GREATER_STR) comp_type_ = GREATER;
+    if(type == LESS_EQUAL_STR) comp_type_ = LESS_EQUAL;
+    if(type == GREATER_EQUAL_STR) comp_type_ = GREATER_EQUAL;
 }
 
 void MainWindow::CheckSearchLine(QString text) {

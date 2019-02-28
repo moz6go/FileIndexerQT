@@ -10,6 +10,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
     Indexer* indx_ptr_;
     SearchType type_;
+    CompareType comp_type_;
     Ui::MainWindow* ui;
     QVector<QTableWidgetItem*> lst_item;
 
@@ -53,6 +54,7 @@ private slots:
     void ShowCurrDir(QString path, unsigned count);
     void DisplayFileInfo(FileInfo info);
     void setSearchType(QString type);
+    void setCompareType(QString type);
     void CheckSearchLine(QString text);
     void ShowDir(int row, int col);
     void ShowAlloc(int row, int col);

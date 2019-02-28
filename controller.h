@@ -12,7 +12,7 @@ public slots:
     void onStartButtonClick();
     void onStopButtonClick();
     void onPauseButtonClick();
-    void onSearchButtonClick(SearchType key, QString value);
+    void onSearchButtonClick(SearchType key, CompareType comp, QString value);
     void ReadIndex ();
 signals:
     void finished();

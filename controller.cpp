@@ -18,9 +18,9 @@ void Controller::onPauseButtonClick() {
     indx_ptr_->SetState (PAUSE);
 }
 
-void Controller::onSearchButtonClick(SearchType key, QString value) {
+void Controller::onSearchButtonClick(SearchType key, CompareType comp, QString value) {
     indx_ptr_->SetState (SEARCH);
-    indx_ptr_->Search (key, value);
+    indx_ptr_->Search (key, comp, value);
 }
 
 void Controller::ReadIndex (){
