@@ -13,7 +13,7 @@ void StateChecker::SetState(Condition state) {
 }
 void StateChecker::CheckPause() {
     QMutexLocker locker(&mtx_);
-    while (state_ == PAUSE){
+    while (state_ == PAUSE) {
         condition_.wait(&mtx_);
     }
 }

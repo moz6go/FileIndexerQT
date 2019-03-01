@@ -81,9 +81,11 @@ void Indexer::Search(SearchType type, CompareType comp, QString key)  {
         int pos = 0;
         do {
             if ((xml_doc_.indexOf (open_tag, pos) + open_tag_size) > pos) {
+
                 if ( Compare( key, comp, xml_doc_.mid(xml_doc_.indexOf(open_tag, pos) + open_tag_size,
                                   xml_doc_.indexOf(close_tag, pos) - (xml_doc_.indexOf(open_tag, pos) + open_tag_size)))) {
                     //store FileInfo and send signal to view
+
                     f_info.path = xml_doc_.mid (xml_doc_.indexOf(OBJECT_OPEN_TAG, pos) + OBJECT_OPEN_TAG_SIZE,
                                                  xml_doc_.indexOf(OBJECT_CLOSE_TAG_ATTR, pos) - (xml_doc_.indexOf(OBJECT_OPEN_TAG, pos) + OBJECT_OPEN_TAG_SIZE));
 
@@ -133,7 +135,7 @@ void Indexer::Search(SearchType type, CompareType comp, QString key)  {
 }
 
 bool Indexer::Compare(QString& key, CompareType& comp, QString text) {
-    switch (comp){
+    switch (comp) {
     case EQUAL:
         return key == text ? true : false;
         break;
@@ -144,17 +146,22 @@ bool Indexer::Compare(QString& key, CompareType& comp, QString text) {
         return text.contains (key) ? true : false;
         break;
     case LESS:
-        return true;
+        return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") < QDate::fromString (key, "dd.MM.yyyy") ? true : false :
+                type_ == BY_SIZE ? text.toUInt() < key.toUInt() ? true : false : false;
         break;
     case GREATER:
-        return true;
+        return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") > QDate::fromString (key, "dd.MM.yyyy") ? true : false :
+                type_ == BY_SIZE ? text.toUInt() > key.toUInt() ? true : false : false;
         break;
     case LESS_EQUAL:
-        return true;
+        return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") <= QDate::fromString (key, "dd.MM.yyyy") ? true : false :
+                type_ == BY_SIZE ? text.toUInt() <= key.toUInt() ? true : false : false;
         break;
     case GREATER_EQUAL:
-        return true;
+        return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") >= QDate::fromString (key, "dd.MM.yyyy") ? true : false :
+                type_ == BY_SIZE ? text.toUInt() >= key.toUInt() ? true : false : false;
     }
+    return false;
 }
 
 unsigned Indexer::GetObjectCount() const {

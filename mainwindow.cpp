@@ -128,7 +128,12 @@ void MainWindow::SwitchButtons(Condition state) {
         stacked_wgt_->setEnabled (true);
         s_combo_->setEnabled (true);
         s_combo_comp_->setEnabled (true);
-        CheckSearchLine (s_line_->text ());
+        if (type_ != BY_DATE) {
+            CheckSearchLine (s_line_->text ());
+        }
+        else{
+            search_action_->setEnabled (true);
+        }
         break;
     case START:
         start_action_->setDisabled (true);
@@ -218,7 +223,6 @@ void MainWindow::onActionPause() {
 }
 
 void MainWindow::onActionSearch() {
-    //lst_item.clear();
     QString key = type_ == BY_DATE ? s_date_->text (): s_line_->text ();
     SwitchButtons(SEARCH);
     DefaultTableWgtInit();

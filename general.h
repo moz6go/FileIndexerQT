@@ -47,7 +47,7 @@ const QString OBJECT_CLOSE_TAG = "</object>";
 const int OBJECT_OPEN_TAG_SIZE = 15;
 
 const QString NAME_OPEN_TAG = "<name>";
-const QString NAME_CLOSE_TAG = "</name>";
+const QString NAME_CLOSE_TAG = "</name>\n";
 const int NAME_OPEN_TAG_SIZE = 6;
 
 const QString EXT_OPEN_TAG = "<extension>";

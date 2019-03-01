@@ -16,6 +16,7 @@ class Indexer : public StateChecker {
     QFile indx_;
     QFileInfoList f_list_;
 
+
     void RecursiveSearchFiles(const QDir& dir);
     void WriteIndexHead();
     void WriteIndexTail();
