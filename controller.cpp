@@ -5,7 +5,7 @@ Controller::Controller (Indexer* indx_ptr) : indx_ptr_(indx_ptr) {}
 void Controller::onStartButtonClick() {
     indx_ptr_->SetCount(0, 0);
     indx_ptr_->SetState (START);
-    indx_ptr_->WriteIndex ();
+    indx_ptr_->Index ();
     emit finished ();
 }
 

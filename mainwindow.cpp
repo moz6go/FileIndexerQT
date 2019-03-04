@@ -180,7 +180,7 @@ void MainWindow::SwitchButtons(Condition state) {
 void MainWindow::onActionStart() {
     SwitchButtons(START);
     DefaultTableWgtInit();
-    ui->s_bar->showMessage (INDEXING);
+    ui->s_bar->showMessage (SEARCHING);
     if (indx_ptr_->CheckState () == PAUSE){
         indx_ptr_->SetState (START);
         indx_ptr_->Resume();
@@ -256,9 +256,9 @@ void MainWindow::ShowMessage(QString msg){
     ui->s_bar->showMessage (msg);
 }
 
-void MainWindow::ShowCurrDir(QString path, unsigned count) {
+void MainWindow::ShowCurrDir(QString path, int count) {
     if (indx_ptr_->CheckState () == START) {
-        ui->s_bar->showMessage (INDEXING + " | " + QString::number (count) + " objects indexed | Current dir: " + path);
+        ui->s_bar->showMessage (SEARCHING + " | " + QString::number (count) + " objects found | Current dir: " + path);
     }
     else {
         ui->s_bar->showMessage (SEARCH_IN_FS + " | Current dir: " + path);

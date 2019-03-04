@@ -9,19 +9,16 @@ Indexer::Indexer() : count_(0),
 
 Indexer::~Indexer() {}
 
-void Indexer::WriteIndex(){
-//    f_list_.clear ();
+void Indexer::Index(){
     QTime t = QTime::currentTime ();
+    f_list_.clear ();
     type_ = ALL;
-    WriteIndexHead();
     foreach(QFileInfo drive, QDir::drives()) {
         RecursiveSearchFiles (drive.dir());
         if(CheckState() == STOP) break;
     }
-//    RecursiveSearchFiles (QDir("/home/myroslav/Документи"));
-    WriteIndexTail();
-//    qDebug() << t.elapsed ();
-//    WriteFullIndex ();
+    qDebug() << t.elapsed ();
+    WriteFullIndex ();
     qDebug() << t.elapsed ();
 }
 
@@ -138,25 +135,19 @@ bool Indexer::Compare(QString& key, CompareType& comp, QString text) {
     switch (comp) {
     case EQUAL:
         return key == text ? true : false;
-        break;
     case NOT_EQUAL:
         return key != text ? true : false;
-        break;
     case CONTAINS:
         return text.contains (key) ? true : false;
-        break;
     case LESS:
         return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") < QDate::fromString (key, "dd.MM.yyyy") ? true : false :
                 type_ == BY_SIZE ? text.toUInt() < key.toUInt() ? true : false : false;
-        break;
     case GREATER:
         return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") > QDate::fromString (key, "dd.MM.yyyy") ? true : false :
                 type_ == BY_SIZE ? text.toUInt() > key.toUInt() ? true : false : false;
-        break;
     case LESS_EQUAL:
         return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") <= QDate::fromString (key, "dd.MM.yyyy") ? true : false :
                 type_ == BY_SIZE ? text.toUInt() <= key.toUInt() ? true : false : false;
-        break;
     case GREATER_EQUAL:
         return type_ == BY_DATE ? QDate::fromString (text, "dd.MM.yyyy") >= QDate::fromString (key, "dd.MM.yyyy") ? true : false :
                 type_ == BY_SIZE ? text.toUInt() >= key.toUInt() ? true : false : false;
@@ -186,8 +177,8 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
     if(CheckState() == STOP) return;
     CheckPause();
 
-    if(!(c_dir_ % 512)) {
-        emit CurrDir(dir.absolutePath (), /*f_list_.size ()*/count_);
+    if(!(c_dir_ % 128)) {
+        emit CurrDir(dir.absolutePath (), f_list_.size ());
     }
 
 
@@ -199,8 +190,7 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
 
 
     if (type_ == ALL) {
-        WriteIndexNode(dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System));
-        //f_list_.append (dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System));
+        f_list_.append (dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System));
     }
     else {
         foreach (QFileInfo file_info, dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System)) {
@@ -276,7 +266,8 @@ void Indexer::WriteIndexNode(QFileInfoList file_list) {
 }
 
 void Indexer::WriteFullIndex() {
-    if(indx_.open(QIODevice::WriteOnly)){
+    if(indx_.open(QIODevice::WriteOnly)) {
+        emit Message ("Write results to file... Please wait...");
         QTextStream fout(&indx_);
         fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
         for(const auto& file_info : f_list_) {
@@ -290,6 +281,7 @@ void Indexer::WriteFullIndex() {
         }
         fout << FS_CLOSE_TAG;
         indx_.close ();
+        f_list_.clear ();
     }
 }
 

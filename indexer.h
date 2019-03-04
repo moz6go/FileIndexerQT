@@ -27,7 +27,7 @@ class Indexer : public StateChecker {
 public:
     Indexer();
     ~Indexer();
-    void WriteIndex();
+    void Index();
     void ReadIndex();
     void Search(SearchType type, CompareType comp, QString key);
     void SetCount(unsigned c_dir, unsigned c_obj);
@@ -37,7 +37,7 @@ public:
 signals:
     void Message(QString mes);
     void MessageSearchCount(unsigned count);
-    void CurrDir(QString path, unsigned count);
+    void CurrDir(QString path, int count);
     void SendInfoToView(FileInfo f_info);
     void CallMsgBox(unsigned count);
 };

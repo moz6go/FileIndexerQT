@@ -51,7 +51,7 @@ private slots:
     void ActionsAfterIndexing();
     void ActionsAfterSearch(unsigned count);
     void ShowMessage(QString msg);
-    void ShowCurrDir(QString path, unsigned count);
+    void ShowCurrDir(QString path, int count);
     void DisplayFileInfo(FileInfo info);
     void setSearchType(QString type);
     void setCompareType(QString type);
