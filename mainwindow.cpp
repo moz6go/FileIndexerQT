@@ -108,14 +108,14 @@ void MainWindow::DefaultTreeInit() {
 
 void MainWindow::InitReadIndex() {
     SwitchButtons (DISABLED);
-    ui->s_bar->showMessage ("Reading from index... Please wait...");
+    ShowMessage ("Reading from index... Please wait...");
 
     QThread* read_indx_thread = new QThread;
     Controller* contr = new Controller(indx_ptr_);
     contr->moveToThread (read_indx_thread);
 
     QObject::connect (read_indx_thread, &QThread::started, contr, &Controller::ReadIndex, Qt::UniqueConnection);
-    QObject::connect (indx_ptr_, &Indexer::Message, this, &MainWindow::ShowMessage, Qt::UniqueConnection);
+    QObject::connect (indx_ptr_, &Indexer::SendReadResult, this, &MainWindow::ActionsAfterReadingIndex, Qt::UniqueConnection);
     read_indx_thread->start ();
 }
 
@@ -180,7 +180,7 @@ void MainWindow::SwitchButtons(Condition state) {
 void MainWindow::onActionStart() {
     SwitchButtons(START);
     DefaultTableWgtInit();
-    ui->s_bar->showMessage (SEARCHING);
+    ShowMessage (SEARCHING);
     if (indx_ptr_->CheckState () == PAUSE){
         indx_ptr_->SetState (START);
         indx_ptr_->Resume();
@@ -192,14 +192,31 @@ void MainWindow::onActionStart() {
 
         QObject::connect (start_thread, &QThread::started, contr, &Controller::onStartButtonClick, Qt::UniqueConnection);
         QObject::connect (contr, &Controller::finished, this, &MainWindow::ActionsAfterIndexing, Qt::UniqueConnection);
-        QObject::connect (indx_ptr_, &Indexer::CurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
+        QObject::connect (contr, &Controller::IndexWriteStarted, this, &MainWindow::WriteIndexMsg, Qt::UniqueConnection);
+        QObject::connect (indx_ptr_, &Indexer::SendCurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
         start_thread->start ();
     }
 }
+void MainWindow::WriteIndexMsg(QString msg) {
+    SwitchButtons(DISABLED);
+    ShowMessage(msg);
+}
+
+void MainWindow::ActionsAfterReadingIndex(QString msg) {
+    SwitchButtons(DEFAULT);
+    ShowMessage(msg);
+}
+
+void MainWindow::ActionsAfterIndexing() {
+    InitReadIndex();
+    ShowMessage ("Count of dirs: " + QString::number(indx_ptr_->GetDirCount ()) +
+                            ",    Count of objects: " + QString::number (indx_ptr_->GetObjectCount ()));
+}
+
 
 void MainWindow::onActionStop() {
     SwitchButtons(STOP);
-    ui->s_bar->showMessage("Stopped...");
+    ShowMessage ("Stopped...");
     QThread* stop_thread = new QThread;
     Controller* contr = new Controller(indx_ptr_);
     contr->moveToThread (stop_thread);
@@ -226,42 +243,36 @@ void MainWindow::onActionSearch() {
     QString key = type_ == BY_DATE ? s_date_->text (): s_line_->text ();
     SwitchButtons(SEARCH);
     DefaultTableWgtInit();
-    ui->s_bar->showMessage ("Searching...");
+    ShowMessage ("Searching...");
     QThread* search_thread = new QThread;
     Controller* contr = new Controller(indx_ptr_);
     contr->moveToThread (search_thread);
 
     QObject::connect (search_thread, &QThread::started, contr, [=] { contr->onSearchButtonClick(type_, comp_type_, key); }, Qt::UniqueConnection);
-    QObject::connect (indx_ptr_, &Indexer::MessageSearchCount, this, &MainWindow::ActionsAfterSearch, Qt::UniqueConnection);
     QObject::connect (indx_ptr_, &Indexer::SendInfoToView, this, &MainWindow::DisplayFileInfo, Qt::UniqueConnection);
-    QObject::connect (indx_ptr_, &Indexer::CurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
-    QObject::connect (indx_ptr_, &Indexer::CallMsgBox, this, &MainWindow::ShowMsgBox, Qt::UniqueConnection);
+    QObject::connect (indx_ptr_, &Indexer::SendCurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::SendSearchResCount, this, &MainWindow::ActionsAfterSearch, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::CallMsgBox, this, &MainWindow::ShowMsgBox, Qt::UniqueConnection);
 
     search_thread->start ();
 }
 
-void MainWindow::ActionsAfterIndexing() {
-    InitReadIndex();
-    ui->s_bar->showMessage ("Count of dirs: " + QString::number(indx_ptr_->GetDirCount ()) +
-                            ",    Count of objects: " + QString::number (indx_ptr_->GetObjectCount ()));
-}
 
 void MainWindow::ActionsAfterSearch (unsigned count) {
     SwitchButtons(DEFAULT);
-    ui->s_bar->showMessage ("Found " + QString::number(count) + " objects");
+    ShowMessage ("Found " + QString::number(count) + " objects");
 }
 
 void MainWindow::ShowMessage(QString msg){
-    if (msg == INDEX_IS_EMPTY || msg.contains(INDEX_SUCCESS)) SwitchButtons(DEFAULT);
-    ui->s_bar->showMessage (msg);
+    ui->s_bar->showMessage(msg);
 }
 
 void MainWindow::ShowCurrDir(QString path, int count) {
     if (indx_ptr_->CheckState () == START) {
-        ui->s_bar->showMessage (SEARCHING + " | " + QString::number (count) + " objects found | Current dir: " + path);
+        ShowMessage (SEARCHING + " | " + QString::number (count) + " objects found | Current dir: " + path);
     }
     else {
-        ui->s_bar->showMessage (SEARCH_IN_FS + " | Current dir: " + path);
+        ShowMessage (SEARCH_IN_FS + " | Current dir: " + path);
     }
 }
 
@@ -277,7 +288,7 @@ void MainWindow::DisplayFileInfo(FileInfo info) {
         table_wgt_->setItem(table_wgt_->rowCount() - 1, i, item);
     }
     if (!(table_wgt_->rowCount() % 256)) {
-        ui->s_bar->showMessage("Searching... " + QString::number(table_wgt_->rowCount()) + " objects already found...");
+        ShowMessage("Searching... " + QString::number(table_wgt_->rowCount()) + " objects already found...");
     }
 }
 

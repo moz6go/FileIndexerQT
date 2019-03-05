@@ -3,7 +3,7 @@
 
 #include "indexer.h"
 
-class Controller : public QObject {
+class Controller : public StateChecker {
     Q_OBJECT
     Indexer* indx_ptr_;
 public:
@@ -15,6 +15,9 @@ public slots:
     void onSearchButtonClick(SearchType key, CompareType comp, QString value);
     void ReadIndex ();
 signals:
+    void SendSearchResCount(unsigned count);
+    void CallMsgBox(unsigned count);
+    void IndexWriteStarted(QString mes);
     void finished();
 };
 

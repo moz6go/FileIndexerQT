@@ -48,6 +48,8 @@ private slots:
     void onActionStop();
     void onActionPause();
     void onActionSearch();
+    void ActionsAfterReadingIndex(QString msg);
+    void WriteIndexMsg(QString msg);
     void ActionsAfterIndexing();
     void ActionsAfterSearch(unsigned count);
     void ShowMessage(QString msg);

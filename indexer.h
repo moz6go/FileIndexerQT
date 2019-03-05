@@ -16,30 +16,32 @@ class Indexer : public StateChecker {
     QFile indx_;
     QFileInfoList f_list_;
 
-
     void RecursiveSearchFiles(const QDir& dir);
     void WriteIndexHead();
     void WriteIndexTail();
     void WriteIndexNode(QFileInfoList file_list);
-    void WriteFullIndex();
     bool isObjExist(FileInfo& f_info);
     bool Compare(QString& key, CompareType& comp, QString text);
 public:
     Indexer();
     ~Indexer();
-    void Index();
+    unsigned SearchMain();
+    void WriteFullIndex();
     void ReadIndex();
-    void Search(SearchType type, CompareType comp, QString key);
-    void SetCount(unsigned c_dir, unsigned c_obj);
+    unsigned SearchInIndx();
+    void SetCount(unsigned c_dir, unsigned c_obj, unsigned c_seacrh);
     void SetSerchInFs(bool search);
+    void SetSearchType(SearchType type);
+    void SetKey(QString key);
+    void SetCompareType(CompareType comp);
     unsigned GetObjectCount() const;
     unsigned GetDirCount() const;
+    bool SearchInFs();
 signals:
-    void Message(QString mes);
-    void MessageSearchCount(unsigned count);
-    void CurrDir(QString path, int count);
+    void SendMessage(QString mes);
+    void SendReadResult(QString mes);
+    void SendCurrDir(QString path, int count);
     void SendInfoToView(FileInfo f_info);
-    void CallMsgBox(unsigned count);
 };
 
 #endif // SERCHFILES_H

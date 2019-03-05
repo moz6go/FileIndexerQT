@@ -9,17 +9,19 @@ Indexer::Indexer() : count_(0),
 
 Indexer::~Indexer() {}
 
-void Indexer::Index(){
-    QTime t = QTime::currentTime ();
-    f_list_.clear ();
-    type_ = ALL;
+unsigned Indexer::SearchMain(){
+    if(type_ == ALL){
+        f_list_.clear ();
+    }
+    else {
+        search_res_count_ = 0;
+    }
+
     foreach(QFileInfo drive, QDir::drives()) {
         RecursiveSearchFiles (drive.dir());
         if(CheckState() == STOP) break;
     }
-    qDebug() << t.elapsed ();
-    WriteFullIndex ();
-    qDebug() << t.elapsed ();
+    return search_res_count_;
 }
 
 void Indexer::ReadIndex() {
@@ -28,29 +30,25 @@ void Indexer::ReadIndex() {
         xml_doc_.clear();
         xml_doc_ = fin.readAll ();
         if(xml_doc_.size()) {
-            emit Message(INDEX_SUCCESS + " | " + QString::number(xml_doc_.count(OBJECT_CLOSE_TAG)) + " objects in index");
+            emit SendReadResult(INDEX_SUCCESS + " | " + QString::number(xml_doc_.count(OBJECT_CLOSE_TAG)) + " objects in index");
         }
         else {
-            emit Message(INDEX_IS_EMPTY);
+            emit SendReadResult(INDEX_IS_EMPTY);
         }
         indx_.close();
     }
     else {
-        emit Message(INDEX_IS_EMPTY);
+        emit SendReadResult(INDEX_IS_EMPTY);
     }
 }
 
-void Indexer::Search(SearchType type, CompareType comp, QString key)  {
-    key_ = key;
-    type_ = type;
-    comp_type_ = comp;
-    search_res_count_ = 0;
+unsigned Indexer::SearchInIndx()  {
     QString open_tag, close_tag;
 
     int open_tag_size = NAME_OPEN_TAG_SIZE;
     FileInfo f_info;
 
-    switch (type) {
+    switch (type_) {
     case BY_NAME:
         open_tag = NAME_OPEN_TAG;
         close_tag = NAME_CLOSE_TAG;
@@ -79,7 +77,7 @@ void Indexer::Search(SearchType type, CompareType comp, QString key)  {
         do {
             if ((xml_doc_.indexOf (open_tag, pos) + open_tag_size) > pos) {
 
-                if ( Compare( key, comp, xml_doc_.mid(xml_doc_.indexOf(open_tag, pos) + open_tag_size,
+                if ( Compare( key_, comp_type_, xml_doc_.mid(xml_doc_.indexOf(open_tag, pos) + open_tag_size,
                                   xml_doc_.indexOf(close_tag, pos) - (xml_doc_.indexOf(open_tag, pos) + open_tag_size)))) {
                     //store FileInfo and send signal to view
 
@@ -111,24 +109,12 @@ void Indexer::Search(SearchType type, CompareType comp, QString key)  {
             }
 
             if(CheckState() == STOP) {
-                emit MessageSearchCount(search_res_count_);
-                return;
+                return search_res_count_;
             }
         } while (pos < xml_doc_.size());
-        emit MessageSearchCount(search_res_count_);
-        emit CallMsgBox (search_res_count_);
-        SetState (PAUSE);
-        CheckPause ();
     }
-    if(search_in_fs_) {
-        search_res_count_ = 0;
-        emit Message(SEARCH_IN_FS);
-        foreach(QFileInfo drive, QDir::drives()) {
-            RecursiveSearchFiles (drive.dir());
-            if(CheckState() == STOP) break;
-        }
-    }
-    emit MessageSearchCount(search_res_count_);
+
+    return search_res_count_;
 }
 
 bool Indexer::Compare(QString& key, CompareType& comp, QString text) {
@@ -163,9 +149,22 @@ unsigned Indexer::GetDirCount() const {
     return c_dir_;
 }
 
-void Indexer::SetCount(unsigned c_dir, unsigned c_obj) {
+void Indexer::SetSearchType(SearchType type){
+    type_ = type;
+}
+
+void Indexer::SetKey(QString key){
+    key_ = key;
+}
+
+void Indexer::SetCompareType(CompareType comp){
+    comp_type_ = comp;
+}
+
+void Indexer::SetCount(unsigned c_dir, unsigned c_obj, unsigned c_seacrh) {
     c_dir_ = c_dir;
     count_ = c_obj;
+    search_res_count_ = c_seacrh;
 }
 
 void Indexer::SetSerchInFs(bool search){
@@ -178,7 +177,7 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
     CheckPause();
 
     if(!(c_dir_ % 128)) {
-        emit CurrDir(dir.absolutePath (), f_list_.size ());
+        emit SendCurrDir(dir.absolutePath (), f_list_.size ());
     }
 
 
@@ -267,7 +266,6 @@ void Indexer::WriteIndexNode(QFileInfoList file_list) {
 
 void Indexer::WriteFullIndex() {
     if(indx_.open(QIODevice::WriteOnly)) {
-        emit Message ("Write results to file... Please wait...");
         QTextStream fout(&indx_);
         fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
         for(const auto& file_info : f_list_) {
@@ -283,9 +281,15 @@ void Indexer::WriteFullIndex() {
         indx_.close ();
         f_list_.clear ();
     }
+
 }
 
 
 bool Indexer::isObjExist(FileInfo& f_info) {
     return f_info.extension == DIR_EXT ? QDir(f_info.path).exists () : QFileInfo(f_info.path).exists ();
+}
+
+
+bool Indexer::SearchInFs(){
+    return search_in_fs_;
 }
