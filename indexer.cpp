@@ -265,9 +265,9 @@ void Indexer::WriteIndexNode(QFileInfoList file_list) {
 }
 
 void Indexer::WriteFullIndex() {
-    unsigned perc = unsigned(f_list_.size () / 100);
-    unsigned perc_prog = perc;
+    QTime t = QTime::currentTime ();
     unsigned progress = 0;
+    count_ = f_list_.size ();
     if(indx_.open(QIODevice::WriteOnly)) {
         QTextStream fout(&indx_);
         fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
@@ -278,17 +278,16 @@ void Indexer::WriteFullIndex() {
                     SIZE_OPEN_TAG << QString::number (file_info.isFile() ? file_info.size() : 0) << SIZE_CLOSE_TAG <<
                     DATE_OPEN_TAG << file_info.lastModified ().toString ("dd.MM.yyyy") << DATE_CLOSE_TAG <<
                     OBJECT_CLOSE_TAG;
-            if(++count_ > perc_prog){
+//            if(!(++progress % 100000)){
                 emit SendCount (++progress);
-                perc_prog += perc;
-            }
+//            }
 
         }
         fout << FS_CLOSE_TAG;
         indx_.close ();
         f_list_.clear ();
     }
-
+    qDebug() << t.elapsed ();
 }
 
 

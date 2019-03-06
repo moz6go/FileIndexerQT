@@ -203,9 +203,10 @@ void MainWindow::WriteIndexMsg(QString msg) {
     ShowMessage(msg);
 
     pb = new QProgressBar(this);
-    pb->setRange (0, 100);
-    pb->setMaximumWidth (150);
-    pb->setAlignment (Qt::AlignLeft);
+    pb->setRange (0, (int)indx_ptr_->GetObjectCount ());
+    pb->setFixedSize (150, 15);
+    //pb->setTextVisible (false);
+    pb->setStyleSheet (STYLE_PB);
     ui->s_bar->addPermanentWidget (pb);
 }
 

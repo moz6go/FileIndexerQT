@@ -9,7 +9,7 @@ void Controller::onStartButtonClick() {
 
     indx_ptr_->SearchMain ();
 
-    emit IndexWriteStarted ("2/2 Writing results of indexing to file... Please wait...");
+    emit IndexWriteStarted ("2/2 Saving results of indexing to storage... Please wait...");
     indx_ptr_->WriteFullIndex ();
 
     emit finished ();
