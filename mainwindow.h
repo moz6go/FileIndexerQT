@@ -33,6 +33,7 @@ class MainWindow : public QMainWindow {
     QTreeView* tree_view_;
     QSplitter* splitter_;
     QHBoxLayout* h_main_layout_;
+    QProgressBar* pb;
 
     void BuildToolbar();
     void DefaultTableWgtInit();
@@ -50,6 +51,7 @@ private slots:
     void onActionSearch();
     void ActionsAfterReadingIndex(QString msg);
     void WriteIndexMsg(QString msg);
+    void ShowProgressBar(unsigned progress);
     void ActionsAfterIndexing();
     void ActionsAfterSearch(unsigned count);
     void ShowMessage(QString msg);

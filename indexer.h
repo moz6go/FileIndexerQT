@@ -42,6 +42,7 @@ signals:
     void SendReadResult(QString mes);
     void SendCurrDir(QString path, int count);
     void SendInfoToView(FileInfo f_info);
+    void SendCount(unsigned count);
 };
 
 #endif // SERCHFILES_H

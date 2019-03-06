@@ -176,8 +176,8 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
     if(CheckState() == STOP) return;
     CheckPause();
 
-    if(!(c_dir_ % 128) && type_ == ALL) {
-        emit SendCurrDir(dir.absolutePath (), f_list_.size ());
+    if(!(c_dir_ % 128)) {
+        emit (type_ == ALL ? SendCurrDir(dir.absolutePath (), f_list_.size ()) : SendCurrDir(dir.absolutePath (), search_res_count_));
     }
 
 
@@ -265,6 +265,9 @@ void Indexer::WriteIndexNode(QFileInfoList file_list) {
 }
 
 void Indexer::WriteFullIndex() {
+    unsigned perc = unsigned(f_list_.size () / 100);
+    unsigned perc_prog = perc;
+    unsigned progress = 0;
     if(indx_.open(QIODevice::WriteOnly)) {
         QTextStream fout(&indx_);
         fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
@@ -275,7 +278,11 @@ void Indexer::WriteFullIndex() {
                     SIZE_OPEN_TAG << QString::number (file_info.isFile() ? file_info.size() : 0) << SIZE_CLOSE_TAG <<
                     DATE_OPEN_TAG << file_info.lastModified ().toString ("dd.MM.yyyy") << DATE_CLOSE_TAG <<
                     OBJECT_CLOSE_TAG;
-            ++count_;
+            if(++count_ > perc_prog){
+                emit SendCount (++progress);
+                perc_prog += perc;
+            }
+
         }
         fout << FS_CLOSE_TAG;
         indx_.close ();

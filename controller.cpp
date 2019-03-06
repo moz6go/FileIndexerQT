@@ -36,7 +36,7 @@ void Controller::onSearchButtonClick(SearchType key, CompareType comp, QString v
     indx_ptr_->SetState (PAUSE);
     indx_ptr_->CheckPause ();
 
-    if(indx_ptr_->SearchInFs ()){
+    if(indx_ptr_->SearchInFs ()) {
         res = indx_ptr_->SearchMain ();
     }
     emit SendSearchResCount(res);

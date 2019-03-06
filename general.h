@@ -23,6 +23,7 @@
 #include <QStackedWidget>
 #include <QDesktopServices>
 #include <QMessageBox>
+#include <QProgressBar>
 
 #include <locale>
 
@@ -84,7 +85,7 @@ const QString GREATER_EQUAL_STR = ">=";
 const QString INDEX_IS_EMPTY = "Index is empty";
 const QString INDEX_SUCCESS = "Index was read successful";
 const QString SEARCH_IN_FS = "Searching in filesystem...";
-const QString SEARCHING = "1/2 Searching files/dirs... Please wait...";
+//const QString SEARCHING = "1/2 Searching files/dirs... Please wait...";
 
 enum SearchType {
     ALL,
