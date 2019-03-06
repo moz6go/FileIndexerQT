@@ -176,7 +176,7 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
     if(CheckState() == STOP) return;
     CheckPause();
 
-    if(!(c_dir_ % 128)) {
+    if(!(c_dir_ % 128) && type_ == ALL) {
         emit SendCurrDir(dir.absolutePath (), f_list_.size ());
     }
 
