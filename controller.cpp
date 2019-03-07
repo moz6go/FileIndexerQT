@@ -30,7 +30,7 @@ void Controller::onSearchButtonClick(SearchType key, CompareType comp, QString v
     indx_ptr_->SetSearchType (key);
     indx_ptr_->SetCompareType (comp);
     indx_ptr_->SetKey (value);
-    unsigned res = indx_ptr_->SearchInIndx ();
+    int res = indx_ptr_->SearchInIndx ();
     emit SendSearchResCount(res);
     emit CallMsgBox (res);
     indx_ptr_->SetState (PAUSE);
@@ -42,7 +42,14 @@ void Controller::onSearchButtonClick(SearchType key, CompareType comp, QString v
     emit SendSearchResCount(res);
 }
 
-void Controller::ReadIndex (){
+void Controller::ReadIndex () {
     indx_ptr_->ReadIndex ();
+    if(indx_ptr_->GetObjectCount ()) {
+        emit SendReadResult(INDEX_SUCCESS + " | " + QString::number(indx_ptr_->GetObjectCount ()) + " objects in index");
+    }
+    else {
+        emit SendReadResult(INDEX_IS_EMPTY);
+    }
+
 }
 

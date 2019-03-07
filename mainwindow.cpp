@@ -115,7 +115,7 @@ void MainWindow::InitReadIndex() {
     contr->moveToThread (read_indx_thread);
 
     QObject::connect (read_indx_thread, &QThread::started, contr, &Controller::ReadIndex, Qt::UniqueConnection);
-    QObject::connect (indx_ptr_, &Indexer::SendReadResult, this, &MainWindow::ActionsAfterReadingIndex, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::SendReadResult, this, &MainWindow::ActionsAfterReadingIndex, Qt::UniqueConnection);
     read_indx_thread->start ();
 }
 
@@ -198,34 +198,6 @@ void MainWindow::onActionStart() {
         start_thread->start ();
     }
 }
-void MainWindow::WriteIndexMsg(QString msg) {
-    SwitchButtons(DISABLED);
-    ShowMessage(msg);
-
-    pb = new QProgressBar(this);
-    pb->setRange (0, (int)indx_ptr_->GetObjectCount ());
-    pb->setFixedSize (150, 15);
-    //pb->setTextVisible (false);
-    pb->setStyleSheet (STYLE_PB);
-    ui->s_bar->addPermanentWidget (pb);
-}
-
-void MainWindow::ShowProgressBar(unsigned progress){
-    pb->setValue (progress);
-}
-
-void MainWindow::ActionsAfterReadingIndex(QString msg) {
-    SwitchButtons(DEFAULT);
-    ShowMessage(msg);
-}
-
-void MainWindow::ActionsAfterIndexing() {
-    ui->s_bar->removeWidget (pb);
-    InitReadIndex();
-    ShowMessage ("Count of dirs: " + QString::number(indx_ptr_->GetDirCount ()) +
-                            ",    Count of objects: " + QString::number (indx_ptr_->GetObjectCount ()));
-}
-
 
 void MainWindow::onActionStop() {
     SwitchButtons(STOP);
@@ -253,6 +225,7 @@ void MainWindow::onActionPause() {
 }
 
 void MainWindow::onActionSearch() {
+    indx_ptr_->SetSerchInFs (false);
     QString key = type_ == BY_DATE ? s_date_->text (): s_line_->text ();
     SwitchButtons(SEARCH);
     DefaultTableWgtInit();
@@ -270,10 +243,36 @@ void MainWindow::onActionSearch() {
     search_thread->start ();
 }
 
+void MainWindow::ActionsAfterIndexing() {
+    ui->s_bar->removeWidget (pb);
+    InitReadIndex();
+    ShowMessage ("Count of dirs: " + QString::number(indx_ptr_->GetDirCount ()) +
+                            ",    Count of objects: " + QString::number (indx_ptr_->GetObjectCount ()));
+}
 
-void MainWindow::ActionsAfterSearch (unsigned count) {
+void MainWindow::ActionsAfterReadingIndex(QString msg) {
+    SwitchButtons(DEFAULT);
+    ShowMessage(msg);
+}
+
+void MainWindow::ActionsAfterSearch (int count) {
     SwitchButtons(DEFAULT);
     ShowMessage ("Found " + QString::number(count) + " objects");
+}
+
+void MainWindow::WriteIndexMsg(QString msg) {
+    SwitchButtons(DISABLED);
+    ShowMessage(msg);
+
+    pb = new QProgressBar(this);
+    pb->setRange (0, (int)indx_ptr_->GetObjectCount ());
+    pb->setFixedSize (150, 15);
+    pb->setStyleSheet (STYLE_PB);
+    ui->s_bar->addPermanentWidget (pb);
+}
+
+void MainWindow::ShowProgressBar(int progress){
+    pb->setValue (progress);
 }
 
 void MainWindow::ShowMessage(QString msg){
@@ -284,6 +283,34 @@ void MainWindow::ShowCurrDir(QString path, int count) {
     QString pref = indx_ptr_->CheckState () == START ? "1/2 " : "";
     ShowMessage (pref + SEARCH_IN_FS + " | " + QString::number (count) + " objects found | Current dir: " + path);
 }
+
+void MainWindow::ShowDir(int row, int col) {
+    QDesktopServices::openUrl (QUrl::fromLocalFile (table_wgt_->item(row, 4)->text ()));
+}
+
+void MainWindow::ShowAlloc(int row, int col) {
+    QModelIndex indx = f_model_->index (table_wgt_->item(row, 4)->text ());
+    tree_view_->setCurrentIndex (indx);
+}
+
+void MainWindow::ShowMsgBox (int count) {
+    SwitchButtons(SEARCH);
+    QMessageBox* msgbox = new QMessageBox(QMessageBox::Question,
+                                          "Search in filesystem...",
+                                          "Found " + QString::number (count) + " object(s).\nDo you want to continue search in filesystem?",
+                                          QMessageBox::No | QMessageBox::Yes,
+                                          this);
+    if(msgbox->exec () == QMessageBox::Yes) {
+        indx_ptr_->SetSerchInFs (true);
+        DefaultTableWgtInit ();
+    }
+    else {
+        indx_ptr_->SetSerchInFs (false);
+    }
+    indx_ptr_->SetState (SEARCH);
+    indx_ptr_->Resume();
+}
+
 
 void MainWindow::DisplayFileInfo(FileInfo info) {
     table_wgt_->insertRow(table_wgt_->rowCount());
@@ -296,7 +323,7 @@ void MainWindow::DisplayFileInfo(FileInfo info) {
                                                                info.path);
         table_wgt_->setItem(table_wgt_->rowCount() - 1, col, item);
     }
-    if (!(table_wgt_->rowCount() % 256)) {
+    if (!(table_wgt_->rowCount() % 256) && indx_ptr_->SearchInFs () == false) {
         ShowMessage("Searching... " + QString::number(table_wgt_->rowCount()) + " objects already found...");
     }
 }
@@ -349,31 +376,4 @@ void MainWindow::CheckSearchLine(QString text) {
     else {
         search_action_->setEnabled (true);
     }
-}
-
-void MainWindow::ShowDir(int row, int col) {
-    QDesktopServices::openUrl (QUrl::fromLocalFile (table_wgt_->item(row, 4)->text ()));
-}
-
-void MainWindow::ShowAlloc(int row, int col) {
-    QModelIndex indx = f_model_->index (table_wgt_->item(row, 4)->text ());
-    tree_view_->setCurrentIndex (indx);
-}
-
-void MainWindow::ShowMsgBox (unsigned count) {
-    SwitchButtons(SEARCH);
-    QMessageBox* msgbox = new QMessageBox(QMessageBox::Question,
-                                          "Search in filesystem...",
-                                          "Found " + QString::number (count) + " object(s).\nDo you want to continue search in filesystem?",
-                                          QMessageBox::No | QMessageBox::Yes,
-                                          this);
-    if(msgbox->exec () == QMessageBox::Yes) {
-        indx_ptr_->SetSerchInFs (true);
-        DefaultTableWgtInit ();
-    }
-    else {
-        indx_ptr_->SetSerchInFs (false);
-    }
-    indx_ptr_->SetState (SEARCH);
-    indx_ptr_->Resume();
 }

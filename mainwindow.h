@@ -12,7 +12,6 @@ class MainWindow : public QMainWindow {
     SearchType type_;
     CompareType comp_type_;
     Ui::MainWindow* ui;
-    QVector<QTableWidgetItem*> lst_item;
 
     QToolBar* ptb_;
     QAction* start_action_;
@@ -49,20 +48,22 @@ private slots:
     void onActionStop();
     void onActionPause();
     void onActionSearch();
-    void ActionsAfterReadingIndex(QString msg);
-    void WriteIndexMsg(QString msg);
-    void ShowProgressBar(unsigned progress);
+
     void ActionsAfterIndexing();
-    void ActionsAfterSearch(unsigned count);
+    void ActionsAfterReadingIndex(QString msg);
+    void ActionsAfterSearch(int count);
+
+    void WriteIndexMsg(QString msg);
+    void ShowProgressBar(int progress);
     void ShowMessage(QString msg);
     void ShowCurrDir(QString path, int count);
+    void ShowDir(int row, int col);
+    void ShowAlloc(int row, int col);
+    void ShowMsgBox(int count);
     void DisplayFileInfo(FileInfo info);
     void setSearchType(QString type);
     void setCompareType(QString type);
     void CheckSearchLine(QString text);
-    void ShowDir(int row, int col);
-    void ShowAlloc(int row, int col);
-    void ShowMsgBox(unsigned count);
 };
 
 #endif // MAINWINDOW_H

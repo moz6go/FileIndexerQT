@@ -15,8 +15,9 @@ public slots:
     void onSearchButtonClick(SearchType key, CompareType comp, QString value);
     void ReadIndex ();
 signals:
-    void SendSearchResCount(unsigned count);
-    void CallMsgBox(unsigned count);
+    void SendReadResult(QString mes);
+    void SendSearchResCount(int count);
+    void CallMsgBox(int count);
     void IndexWriteStarted(QString mes);
     void finished();
 };

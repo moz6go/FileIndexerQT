@@ -79,8 +79,6 @@ const QString GREATER_EQUAL_STR = ">=";
 #define S_TYPE QStringList() << NAME_STR << EXTENSION_STR << SIZE_STR << DATE_STR
 #define COMP_SET_1 QStringList() << EQUAL_STR << NOT_EQUAL_STR << CONTAINS_STR
 #define COMP_SET_2 QStringList() << EQUAL_STR<< NOT_EQUAL_STR << LESS_STR << GREATER_STR << LESS_EQUAL_STR << GREATER_EQUAL_STR
-#define EXTANSION_DEF node.isFile() ? node.suffix ().isEmpty ()? "Unknown" :node.suffix () : "DIR"
-#define SIZE_DEF node.isFile() ? node.size() : 0
 
 const QString INDEX_IS_EMPTY = "Index is empty";
 const QString INDEX_SUCCESS = "Index was read successful";

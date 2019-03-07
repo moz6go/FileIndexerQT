@@ -5,9 +5,9 @@
 
 class Indexer : public StateChecker {
     Q_OBJECT
-    unsigned count_;
-    unsigned c_dir_;
-    unsigned search_res_count_;
+    int count_;
+    int c_dir_;
+    int search_res_count_;
     bool search_in_fs_;
     SearchType type_;
     CompareType comp_type_;
@@ -25,24 +25,24 @@ class Indexer : public StateChecker {
 public:
     Indexer();
     ~Indexer();
-    unsigned SearchMain();
+    int SearchMain();
     void WriteFullIndex();
     void ReadIndex();
-    unsigned SearchInIndx();
-    void SetCount(unsigned c_dir, unsigned c_obj, unsigned c_seacrh);
+    int SearchInIndx();
+
+    void SetCount(int c_dir, int c_obj, int c_seacrh);
     void SetSerchInFs(bool search);
     void SetSearchType(SearchType type);
     void SetKey(QString key);
     void SetCompareType(CompareType comp);
-    unsigned GetObjectCount() const;
-    unsigned GetDirCount() const;
+
+    int GetObjectCount() const;
+    int GetDirCount() const;
     bool SearchInFs();
 signals:
-    void SendMessage(QString mes);
-    void SendReadResult(QString mes);
     void SendCurrDir(QString path, int count);
     void SendInfoToView(FileInfo f_info);
-    void SendCount(unsigned count);
+    void SendCount(int count);
 };
 
 #endif // SERCHFILES_H

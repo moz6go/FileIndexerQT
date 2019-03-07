@@ -9,7 +9,7 @@ Indexer::Indexer() : count_(0),
 
 Indexer::~Indexer() {}
 
-unsigned Indexer::SearchMain(){
+int Indexer::SearchMain(){
     if(type_ == ALL){
         f_list_.clear ();
     }
@@ -24,25 +24,42 @@ unsigned Indexer::SearchMain(){
     return search_res_count_;
 }
 
+void Indexer::WriteFullIndex() {
+    int progress = 0;
+    count_ = f_list_.size ();
+    if(indx_.open(QIODevice::WriteOnly)) {
+        QTextStream fout(&indx_);
+        fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
+        for(const auto& file_info : f_list_) {
+            fout << OBJECT_OPEN_TAG << file_info.absoluteFilePath () << OBJECT_CLOSE_TAG_ATTR <<
+                    NAME_OPEN_TAG << file_info.fileName () << NAME_CLOSE_TAG <<
+                    EXT_OPEN_TAG << (file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR") << EXT_CLOSE_TAG <<
+                    SIZE_OPEN_TAG << QString::number (file_info.isFile() ? file_info.size() : 0) << SIZE_CLOSE_TAG <<
+                    DATE_OPEN_TAG << file_info.lastModified ().toString ("dd.MM.yyyy") << DATE_CLOSE_TAG <<
+                    OBJECT_CLOSE_TAG;
+            emit SendCount (++progress);
+
+        }
+        fout << FS_CLOSE_TAG;
+        indx_.close ();
+        f_list_.clear ();
+    }
+}
+
 void Indexer::ReadIndex() {
     if (indx_.open(QIODevice::ReadOnly)) {
         QTextStream fin(&indx_);
         xml_doc_.clear();
         xml_doc_ = fin.readAll ();
-        if(xml_doc_.size()) {
-            emit SendReadResult(INDEX_SUCCESS + " | " + QString::number(xml_doc_.count(OBJECT_CLOSE_TAG)) + " objects in index");
-        }
-        else {
-            emit SendReadResult(INDEX_IS_EMPTY);
-        }
+        count_ = xml_doc_.count(OBJECT_CLOSE_TAG);
         indx_.close();
     }
     else {
-        emit SendReadResult(INDEX_IS_EMPTY);
+        count_ = 0;
     }
 }
 
-unsigned Indexer::SearchInIndx()  {
+int Indexer::SearchInIndx()  {
     QString open_tag, close_tag;
 
     int open_tag_size = NAME_OPEN_TAG_SIZE;
@@ -141,14 +158,6 @@ bool Indexer::Compare(QString& key, CompareType& comp, QString text) {
     return false;
 }
 
-unsigned Indexer::GetObjectCount() const {
-    return count_;
-}
-
-unsigned Indexer::GetDirCount() const {
-    return c_dir_;
-}
-
 void Indexer::SetSearchType(SearchType type){
     type_ = type;
 }
@@ -161,7 +170,7 @@ void Indexer::SetCompareType(CompareType comp){
     comp_type_ = comp;
 }
 
-void Indexer::SetCount(unsigned c_dir, unsigned c_obj, unsigned c_seacrh) {
+void Indexer::SetCount(int c_dir, int c_obj, int c_seacrh) {
     c_dir_ = c_dir;
     count_ = c_obj;
     search_res_count_ = c_seacrh;
@@ -171,7 +180,18 @@ void Indexer::SetSerchInFs(bool search){
     search_in_fs_ = search;
 }
 
-// private methods-------------------------------------------------------------------------------------------
+int Indexer::GetObjectCount() const {
+    return count_;
+}
+
+int Indexer::GetDirCount() const {
+    return c_dir_;
+}
+
+bool Indexer::SearchInFs(){
+    return search_in_fs_;
+}
+
 void Indexer::RecursiveSearchFiles(const QDir& dir) {
     if(CheckState() == STOP) return;
     CheckPause();
@@ -264,38 +284,6 @@ void Indexer::WriteIndexNode(QFileInfoList file_list) {
     }
 }
 
-void Indexer::WriteFullIndex() {
-    QTime t = QTime::currentTime ();
-    unsigned progress = 0;
-    count_ = f_list_.size ();
-    if(indx_.open(QIODevice::WriteOnly)) {
-        QTextStream fout(&indx_);
-        fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
-        for(const auto& file_info : f_list_) {
-            fout << OBJECT_OPEN_TAG << file_info.absoluteFilePath () << OBJECT_CLOSE_TAG_ATTR <<
-                    NAME_OPEN_TAG << file_info.fileName () << NAME_CLOSE_TAG <<
-                    EXT_OPEN_TAG << (file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR") << EXT_CLOSE_TAG <<
-                    SIZE_OPEN_TAG << QString::number (file_info.isFile() ? file_info.size() : 0) << SIZE_CLOSE_TAG <<
-                    DATE_OPEN_TAG << file_info.lastModified ().toString ("dd.MM.yyyy") << DATE_CLOSE_TAG <<
-                    OBJECT_CLOSE_TAG;
-//            if(!(++progress % 100000)){
-                emit SendCount (++progress);
-//            }
-
-        }
-        fout << FS_CLOSE_TAG;
-        indx_.close ();
-        f_list_.clear ();
-    }
-    qDebug() << t.elapsed ();
-}
-
-
 bool Indexer::isObjExist(FileInfo& f_info) {
     return f_info.extension == DIR_EXT ? QDir(f_info.path).exists () : QFileInfo(f_info.path).exists ();
-}
-
-
-bool Indexer::SearchInFs(){
-    return search_in_fs_;
 }
