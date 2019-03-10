@@ -24,6 +24,7 @@
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QProgressBar>
+#include <QLinkedList>
 
 #include <locale>
 
@@ -83,8 +84,8 @@ const QString GREATER_EQUAL_STR = ">=";
 const QString INDEX_IS_EMPTY = "Index is empty";
 const QString INDEX_SUCCESS = "Index was read successful";
 const QString SEARCH_IN_FS = "Searching in filesystem...";
-const QString STYLE_PB = "QProgressBar {border-radius: 1px; text-align: center;}"
-                         "QProgressBar::chunk {background-color: #3AC66D}";
+const QString STYLE_PB = "QProgressBar { border-radius: 5px; text-align: center;}"
+                         "QProgressBar::chunk {background-color: #00b050}";
 
 enum SearchType {
     ALL,

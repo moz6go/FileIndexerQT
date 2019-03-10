@@ -12,6 +12,7 @@ Indexer::~Indexer() {}
 int Indexer::SearchMain(){
     if(type_ == ALL){
         f_list_.clear ();
+        xml_doc_.clear();
     }
     else {
         search_res_count_ = 0;
@@ -31,18 +32,19 @@ void Indexer::WriteFullIndex() {
         QTextStream fout(&indx_);
         fout << HEADER_TAG << REM_TAG << FS_OPEN_TAG;
         for(const auto& file_info : f_list_) {
-            fout << OBJECT_OPEN_TAG << file_info.absoluteFilePath () << OBJECT_CLOSE_TAG_ATTR <<
-                    NAME_OPEN_TAG << file_info.fileName () << NAME_CLOSE_TAG <<
-                    EXT_OPEN_TAG << (file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR") << EXT_CLOSE_TAG <<
-                    SIZE_OPEN_TAG << QString::number (file_info.isFile() ? file_info.size() : 0) << SIZE_CLOSE_TAG <<
-                    DATE_OPEN_TAG << file_info.lastModified ().toString ("dd.MM.yyyy") << DATE_CLOSE_TAG <<
+            fout << OBJECT_OPEN_TAG << file_info.path << OBJECT_CLOSE_TAG_ATTR <<
+                    NAME_OPEN_TAG << file_info.name << NAME_CLOSE_TAG <<
+                    EXT_OPEN_TAG << file_info.extension  << EXT_CLOSE_TAG <<
+                    SIZE_OPEN_TAG <<file_info.size << SIZE_CLOSE_TAG <<
+                    DATE_OPEN_TAG << file_info.date << DATE_CLOSE_TAG <<
                     OBJECT_CLOSE_TAG;
             emit SendCount (++progress);
-
         }
         fout << FS_CLOSE_TAG;
         indx_.close ();
+        fout.flush();
         f_list_.clear ();
+        f_list_.squeeze ();
     }
 }
 
@@ -208,45 +210,42 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
     }
 
 
-    if (type_ == ALL) {
-        f_list_.append (dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System));
-    }
-    else {
-        foreach (QFileInfo file_info, dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System)) {
-            FileInfo curr_file_info;
-            curr_file_info.name = file_info.fileName ();
-            curr_file_info.extension = file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR";
-            curr_file_info.size = QString::number (file_info.isFile() ? file_info.size() : 0);
-            curr_file_info.date = file_info.lastModified ().toString ("dd.MM.yyyy");
-            curr_file_info.path = file_info.absoluteFilePath ();
+    foreach (QFileInfo file_info, dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::System)) {
+        FileInfo curr_file_info;
+        curr_file_info.name = file_info.fileName ();
+        curr_file_info.extension = file_info.isFile() ? file_info.suffix ().isEmpty ()? "Unknown" : file_info.suffix () : "DIR";
+        curr_file_info.size = QString::number (file_info.isFile() ? file_info.size() : 0);
+        curr_file_info.date = file_info.lastModified ().toString ("dd.MM.yyyy");
+        curr_file_info.path = file_info.absoluteFilePath ();
 
-            switch(type_) {
-            case ALL:
-            case BY_NAME:
-                if (Compare(key_, comp_type_, curr_file_info.name)) {
-                    emit SendInfoToView(curr_file_info);
-                    ++search_res_count_;
-                }
-                break;
-            case BY_EXTENSION:
-                if (Compare(key_, comp_type_,curr_file_info.extension)){
-                    emit SendInfoToView(curr_file_info);
-                    ++search_res_count_;
-                }
-                break;
-            case BY_SIZE:
-                if (Compare(key_, comp_type_, curr_file_info.size)){
-                    emit SendInfoToView(curr_file_info);
-                    ++search_res_count_;
-                }
-                break;
-            case BY_DATE:
-                if (Compare(key_, comp_type_, curr_file_info.date)) {
-                    emit SendInfoToView(curr_file_info);
-                    ++search_res_count_;
-                }
-                break;
+        switch(type_) {
+        case ALL:
+            f_list_.push_back(curr_file_info);
+            break;
+        case BY_NAME:
+            if (Compare(key_, comp_type_, curr_file_info.name)) {
+                emit SendInfoToView(curr_file_info);
+                ++search_res_count_;
             }
+            break;
+        case BY_EXTENSION:
+            if (Compare(key_, comp_type_,curr_file_info.extension)){
+                emit SendInfoToView(curr_file_info);
+                ++search_res_count_;
+            }
+            break;
+        case BY_SIZE:
+            if (Compare(key_, comp_type_, curr_file_info.size)){
+                emit SendInfoToView(curr_file_info);
+                ++search_res_count_;
+            }
+            break;
+        case BY_DATE:
+            if (Compare(key_, comp_type_, curr_file_info.date)) {
+                emit SendInfoToView(curr_file_info);
+                ++search_res_count_;
+            }
+            break;
         }
     }
 }

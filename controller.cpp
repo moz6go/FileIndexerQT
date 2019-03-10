@@ -3,15 +3,16 @@
 Controller::Controller (Indexer* indx_ptr) : indx_ptr_(indx_ptr) {}
 
 void Controller::onStartButtonClick() {
+    QTime t = QTime::currentTime();
     indx_ptr_->SetCount(0, 0, 0);
     indx_ptr_->SetState (START);
     indx_ptr_->SetSearchType (ALL);
 
     indx_ptr_->SearchMain ();
-
+    qDebug() << t.elapsed();
     emit IndexWriteStarted ("2/2 Saving results of indexing to storage... Please wait...");
     indx_ptr_->WriteFullIndex ();
-
+    qDebug() << t.elapsed();
     emit finished ();
 }
 
