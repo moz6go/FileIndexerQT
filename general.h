@@ -27,6 +27,7 @@
 #include <QLinkedList>
 
 #include <locale>
+#include <malloc.h>
 
 #if defined(_WIN32)
 const int SIZE_WID = 24;

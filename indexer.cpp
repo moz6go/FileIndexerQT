@@ -38,13 +38,14 @@ void Indexer::WriteFullIndex() {
                     SIZE_OPEN_TAG <<file_info.size << SIZE_CLOSE_TAG <<
                     DATE_OPEN_TAG << file_info.date << DATE_CLOSE_TAG <<
                     OBJECT_CLOSE_TAG;
-            emit SendCount (++progress);
+            if(!(++progress % 10000)) {
+                emit SendCount (progress);
+            }
         }
         fout << FS_CLOSE_TAG;
         indx_.close ();
-        fout.flush();
-        f_list_.clear ();
-        f_list_.squeeze ();
+        f_list_.reserve (0);
+        malloc_trim(0);
     }
 }
 
@@ -220,7 +221,7 @@ void Indexer::RecursiveSearchFiles(const QDir& dir) {
 
         switch(type_) {
         case ALL:
-            f_list_.push_back(curr_file_info);
+            f_list_.push_back (std::move(curr_file_info));
             break;
         case BY_NAME:
             if (Compare(key_, comp_type_, curr_file_info.name)) {

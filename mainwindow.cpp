@@ -116,6 +116,9 @@ void MainWindow::InitReadIndex() {
 
     QObject::connect (read_indx_thread, &QThread::started, contr, &Controller::ReadIndex, Qt::UniqueConnection);
     QObject::connect (contr, &Controller::SendReadResult, this, &MainWindow::ActionsAfterReadingIndex, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::finished, read_indx_thread, &QThread::quit, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::finished, contr, &Controller::deleteLater, Qt::UniqueConnection);
+    QObject::connect (read_indx_thread, &QThread::finished, read_indx_thread, &QThread::deleteLater, Qt::UniqueConnection);
     read_indx_thread->start ();
 }
 
@@ -191,10 +194,14 @@ void MainWindow::onActionStart() {
         contr->moveToThread (start_thread);
 
         QObject::connect (start_thread, &QThread::started, contr, &Controller::onStartButtonClick, Qt::UniqueConnection);
-        QObject::connect (contr, &Controller::finished, this, &MainWindow::ActionsAfterIndexing, Qt::UniqueConnection);
         QObject::connect (contr, &Controller::IndexWriteStarted, this, &MainWindow::WriteIndexMsg, Qt::UniqueConnection);
         QObject::connect (indx_ptr_, &Indexer::SendCurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
         QObject::connect (indx_ptr_, &Indexer::SendCount, this, &MainWindow::ShowProgressBar, Qt::UniqueConnection);
+        QObject::connect (contr, &Controller::finished, this, &MainWindow::ActionsAfterIndexing, Qt::UniqueConnection);
+        QObject::connect (contr, &Controller::finished, start_thread, &QThread::quit, Qt::UniqueConnection);
+        QObject::connect (contr, &Controller::finished, contr, &Controller::deleteLater, Qt::UniqueConnection);
+        QObject::connect (start_thread, &QThread::finished, start_thread, &QThread::deleteLater, Qt::UniqueConnection);
+
         start_thread->start ();
     }
 }
@@ -206,8 +213,10 @@ void MainWindow::onActionStop() {
     Controller* contr = new Controller(indx_ptr_);
     contr->moveToThread (stop_thread);
 
-    QObject::connect(stop_thread, &QThread::started, contr, &Controller::onStopButtonClick, Qt::UniqueConnection);
-
+    QObject::connect (stop_thread, &QThread::started, contr, &Controller::onStopButtonClick, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::finished, stop_thread, &QThread::quit, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::finished, contr, &Controller::deleteLater, Qt::UniqueConnection);
+    QObject::connect (stop_thread, &QThread::finished, stop_thread, &QThread::deleteLater, Qt::UniqueConnection);
     stop_thread->start ();
 }
 
@@ -219,8 +228,10 @@ void MainWindow::onActionPause() {
     Controller* contr = new Controller(indx_ptr_);
     contr->moveToThread (pause_thread);
 
-    QObject::connect(pause_thread, &QThread::started, contr, &Controller::onPauseButtonClick, Qt::UniqueConnection);
-
+    QObject::connect (pause_thread, &QThread::started, contr, &Controller::onPauseButtonClick, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::finished, pause_thread, &QThread::quit, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::finished, contr, &Controller::deleteLater, Qt::UniqueConnection);
+    QObject::connect (pause_thread, &QThread::finished, pause_thread, &QThread::deleteLater, Qt::UniqueConnection);
     pause_thread->start ();
 }
 
@@ -239,7 +250,9 @@ void MainWindow::onActionSearch() {
     QObject::connect (indx_ptr_, &Indexer::SendCurrDir, this, &MainWindow::ShowCurrDir, Qt::UniqueConnection);
     QObject::connect (contr, &Controller::SendSearchResCount, this, &MainWindow::ActionsAfterSearch, Qt::UniqueConnection);
     QObject::connect (contr, &Controller::CallMsgBox, this, &MainWindow::ShowMsgBox, Qt::UniqueConnection);
-
+    QObject::connect (contr, &Controller::finished, search_thread, &QThread::quit, Qt::UniqueConnection);
+    QObject::connect (contr, &Controller::finished, contr, &Controller::deleteLater, Qt::UniqueConnection);
+    QObject::connect (search_thread, &QThread::finished, search_thread, &QThread::deleteLater, Qt::UniqueConnection);
     search_thread->start ();
 }
 
