@@ -26,13 +26,11 @@
 #include <QProgressBar>
 #include <QLinkedList>
 
-#include <locale>
-#include <malloc.h>
-
 #if defined(_WIN32)
 const int SIZE_WID = 24;
 const QString INDEX_FILE = "D:\\FS_index.xml";
 #else
+#include <malloc.h>
 const int SIZE_WID = 32;
 const QString INDEX_FILE = "/tmp/.FS_index.xml";
 #endif

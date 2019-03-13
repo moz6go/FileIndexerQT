@@ -44,8 +44,10 @@ void Indexer::WriteFullIndex() {
         }
         fout << FS_CLOSE_TAG;
         indx_.close ();
-        f_list_.reserve (0);
+        f_list_.clear ();
+#ifndef _WIN32
         malloc_trim(0);
+#endif
     }
 }
 
@@ -54,6 +56,7 @@ void Indexer::ReadIndex() {
         QTextStream fin(&indx_);
         xml_doc_.clear();
         xml_doc_ = fin.readAll ();
+        xml_doc_.squeeze ();
         count_ = xml_doc_.count(OBJECT_CLOSE_TAG);
         indx_.close();
     }

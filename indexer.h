@@ -2,7 +2,7 @@
 #define SERCHFILES_H
 
 #include "statechecker.h"
-#include <vector>
+
 class Indexer : public StateChecker {
     Q_OBJECT
     int count_;
@@ -14,7 +14,6 @@ class Indexer : public StateChecker {
     QString key_;
     QString xml_doc_;
     QFile indx_;
-    //QFileInfoList f_list_;
     QVector<FileInfo> f_list_;
 
     void RecursiveSearchFiles(const QDir& dir);

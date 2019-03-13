@@ -86,6 +86,9 @@ void MainWindow::BuildToolbar() {
 
 void MainWindow::DefaultTableWgtInit() {
     table_wgt_->clear ();
+#ifndef _WIN32
+        malloc_trim(0);
+#endif
     table_wgt_->setRowCount (0);
     table_wgt_->setColumnCount(5);
     table_wgt_->setHorizontalHeaderLabels (S_TYPE << "Path");
@@ -298,7 +301,16 @@ void MainWindow::ShowCurrDir(QString path, int count) {
 }
 
 void MainWindow::ShowDir(int row, int col) {
-    QDesktopServices::openUrl (QUrl::fromLocalFile (table_wgt_->item(row, 4)->text ()));
+    QString path = table_wgt_->item(row, 4)->text ();
+    QString extension = table_wgt_->item(row, 1)->text ();
+    if(extension == DIR_EXT ? QDir(path).exists () : QFileInfo(path).exists ()) {
+        QDesktopServices::openUrl (QUrl::fromLocalFile (path));
+    }
+    else {
+        QMessageBox::critical (this, "Error!", "Object does not exist!");
+        table_wgt_->removeRow (row);
+        ActionsAfterSearch(table_wgt_->rowCount ());
+    }
 }
 
 void MainWindow::ShowAlloc(int row, int col) {
