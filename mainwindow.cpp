@@ -92,18 +92,23 @@ void MainWindow::DefaultTableWgtInit() {
     table_wgt_->setRowCount (0);
     table_wgt_->setColumnCount(5);
     table_wgt_->setHorizontalHeaderLabels (S_TYPE << "Path");
+    table_wgt_->verticalHeader ()->setSectionResizeMode (QHeaderView::Fixed);
+    table_wgt_->verticalHeader ()->setDefaultSectionSize (20);
     table_wgt_->verticalHeader()->setVisible(false);
     table_wgt_->setShowGrid(false);
     table_wgt_->setWordWrap(false);
     table_wgt_->setEditTriggers (QAbstractItemView::NoEditTriggers);
     table_wgt_->setSelectionBehavior(QAbstractItemView::SelectRows);
-    header_ = table_wgt_->horizontalHeader();
-    header_->setSectionResizeMode(0, QHeaderView::Stretch);
+    table_wgt_->resizeColumnsToContents();
+    table_wgt_->horizontalHeader()->setStretchLastSection(true);
+    table_wgt_->horizontalHeader ()->setStyleSheet ("QHeaderView { font-size: 10pt; }");
+    table_wgt_->setStyleSheet ("QTableView { font-size: 10pt; }");
 }
 
 void MainWindow::DefaultTreeInit() {
     f_model_->setRootPath(QDir::rootPath());
     tree_view_->setModel(f_model_);
+    tree_view_->header ()->setStyleSheet ("QHeaderView { font-size: 10pt; }");
     for(int i = 1; i < 4; ++i) {
         tree_view_->hideColumn (i);
     }
